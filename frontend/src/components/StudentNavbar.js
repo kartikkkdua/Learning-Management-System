@@ -8,7 +8,8 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  IconButton
+  IconButton,
+  Badge
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -16,17 +17,16 @@ import {
   AccountCircle, 
   Logout,
   Dashboard as DashboardIcon,
-  School as SchoolIcon,
-  People,
   MenuBook,
   Assignment,
+  Grade,
   Campaign,
   EventNote,
-  Grade,
-  PersonAdd
+  Person,
+  Notifications
 } from '@mui/icons-material';
 
-const Navbar = ({ user, onLogout }) => {
+const StudentNavbar = ({ user, onLogout }) => {
   const location = useLocation();
   const [anchorEl, setAnchorEl] = React.useState(null);
 
@@ -50,7 +50,7 @@ const Navbar = ({ user, onLogout }) => {
       <Toolbar>
         <School sx={{ mr: 2 }} />
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Learning Management System
+          Student Portal
         </Typography>
         
         <Box sx={{ display: 'flex', gap: 1, mr: 2 }}>
@@ -67,34 +67,6 @@ const Navbar = ({ user, onLogout }) => {
             Dashboard
           </Button>
           
-          {(user?.role === 'admin' || user?.role === 'faculty') && (
-            <Button 
-              color="inherit" 
-              component={Link} 
-              to="/faculties"
-              startIcon={<SchoolIcon />}
-              sx={{ 
-                backgroundColor: isActive('/faculties') ? 'rgba(255,255,255,0.1)' : 'transparent',
-                borderRadius: 2
-              }}
-            >
-              Faculties
-            </Button>
-          )}
-          
-          <Button 
-            color="inherit" 
-            component={Link} 
-            to="/students"
-            startIcon={<People />}
-            sx={{ 
-              backgroundColor: isActive('/students') ? 'rgba(255,255,255,0.1)' : 'transparent',
-              borderRadius: 2
-            }}
-          >
-            Students
-          </Button>
-          
           <Button 
             color="inherit" 
             component={Link} 
@@ -105,23 +77,34 @@ const Navbar = ({ user, onLogout }) => {
               borderRadius: 2
             }}
           >
-            Courses
+            My Courses
           </Button>
           
-          {(user?.role === 'admin' || user?.role === 'faculty') && (
-            <Button 
-              color="inherit" 
-              component={Link} 
-              to="/assignments"
-              startIcon={<Assignment />}
-              sx={{ 
-                backgroundColor: isActive('/assignments') ? 'rgba(255,255,255,0.1)' : 'transparent',
-                borderRadius: 2
-              }}
-            >
-              Assignments
-            </Button>
-          )}
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/assignments"
+            startIcon={<Assignment />}
+            sx={{ 
+              backgroundColor: isActive('/assignments') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Assignments
+          </Button>
+          
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/grades"
+            startIcon={<Grade />}
+            sx={{ 
+              backgroundColor: isActive('/grades') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Grades
+          </Button>
           
           <Button 
             color="inherit" 
@@ -136,65 +119,41 @@ const Navbar = ({ user, onLogout }) => {
             Announcements
           </Button>
           
-          {(user?.role === 'admin' || user?.role === 'faculty') && (
-            <Button 
-              color="inherit" 
-              component={Link} 
-              to="/attendance"
-              startIcon={<EventNote />}
-              sx={{ 
-                backgroundColor: isActive('/attendance') ? 'rgba(255,255,255,0.1)' : 'transparent',
-                borderRadius: 2
-              }}
-            >
-              Attendance
-            </Button>
-          )}
-          
-          {(user?.role === 'admin' || user?.role === 'faculty') && (
-            <Button 
-              color="inherit" 
-              component={Link} 
-              to="/grading"
-              startIcon={<Grade />}
-              sx={{ 
-                backgroundColor: isActive('/grading') ? 'rgba(255,255,255,0.1)' : 'transparent',
-                borderRadius: 2
-              }}
-            >
-              Grading
-            </Button>
-          )}
-          
-          {(user?.role === 'admin' || user?.role === 'faculty') && (
-            <Button 
-              color="inherit" 
-              component={Link} 
-              to="/enrollments"
-              startIcon={<PersonAdd />}
-              sx={{ 
-                backgroundColor: isActive('/enrollments') ? 'rgba(255,255,255,0.1)' : 'transparent',
-                borderRadius: 2
-              }}
-            >
-              Enrollments
-            </Button>
-          )}
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/attendance"
+            startIcon={<EventNote />}
+            sx={{ 
+              backgroundColor: isActive('/attendance') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Attendance
+          </Button>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <IconButton color="inherit">
+            <Badge badgeContent={3} color="error">
+              <Notifications />
+            </Badge>
+          </IconButton>
+          
           <Typography variant="body2" sx={{ mr: 1 }}>
             {user?.profile?.firstName || user?.username}
           </Typography>
+          
           <IconButton
             size="large"
             onClick={handleMenu}
             color="inherit"
           >
             <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
-              {(user?.profile?.firstName?.[0] || user?.username?.[0] || 'U').toUpperCase()}
+              {(user?.profile?.firstName?.[0] || user?.username?.[0] || 'S').toUpperCase()}
             </Avatar>
           </IconButton>
+          
           <Menu
             anchorEl={anchorEl}
             anchorOrigin={{
@@ -209,9 +168,9 @@ const Navbar = ({ user, onLogout }) => {
             open={Boolean(anchorEl)}
             onClose={handleClose}
           >
-            <MenuItem onClick={handleClose}>
-              <AccountCircle sx={{ mr: 1 }} />
-              Profile
+            <MenuItem component={Link} to="/profile" onClick={handleClose}>
+              <Person sx={{ mr: 1 }} />
+              My Profile
             </MenuItem>
             <MenuItem onClick={handleLogout}>
               <Logout sx={{ mr: 1 }} />
@@ -224,4 +183,4 @@ const Navbar = ({ user, onLogout }) => {
   );
 };
 
-export default Navbar;
+export default StudentNavbar;

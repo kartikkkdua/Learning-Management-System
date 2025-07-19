@@ -12,6 +12,8 @@ import AssignmentManagement from './components/AssignmentManagement';
 import AnnouncementManagement from './components/AnnouncementManagement';
 import AttendanceManagement from './components/AttendanceManagement';
 import GradingSystem from './components/GradingSystem';
+import EnrollmentManagement from './components/EnrollmentManagement';
+import StudentPortal from './components/StudentPortal';
 import './App.css';
 
 const theme = createTheme({
@@ -62,6 +64,14 @@ function App() {
     );
   }
 
+  // Render different interfaces based on user role
+  if (user.role === 'student') {
+    return (
+      <StudentPortal user={user} onLogout={handleLogout} />
+    );
+  }
+
+  // Admin/Faculty interface
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -77,6 +87,7 @@ function App() {
             <Route path="/announcements" element={<AnnouncementManagement />} />
             <Route path="/attendance" element={<AttendanceManagement />} />
             <Route path="/grading" element={<GradingSystem />} />
+            <Route path="/enrollments" element={<EnrollmentManagement />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>

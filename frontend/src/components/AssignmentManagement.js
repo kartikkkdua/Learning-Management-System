@@ -77,7 +77,7 @@ const AssignmentManagement = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       const assignmentData = {
         ...formData,
-        instructor: user.id
+        instructor: user.id || user._id
       };
 
       if (editingAssignment) {

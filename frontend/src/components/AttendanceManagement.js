@@ -115,7 +115,7 @@ const AttendanceManagement = () => {
           status: record.status,
           notes: record.notes
         })),
-        markedBy: user.id
+        markedBy: user.id || user._id
       };
 
       await axios.post('http://localhost:3001/api/attendance', attendancePayload);
@@ -265,11 +265,19 @@ const AttendanceManagement = () => {
                 <TableRow key={record._id}>
                   <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Chip 
-                      label={record.course.courseCode} 
-                      color="primary" 
-                      size="small" 
-                    />
+                    {record.course ? (
+                      <Chip 
+                        label={record.course.courseCode} 
+                        color="primary" 
+                        size="small" 
+                      />
+                    ) : (
+                      <Chip 
+                        label="No Course Assigned" 
+                        color="default" 
+                        size="small" 
+                      />
+                    )}
                   </TableCell>
                   <TableCell>
                     <Chip 
@@ -404,7 +412,7 @@ const AttendanceManagement = () => {
                     {studentStat.stats.map((courseStat) => (
                       <Box key={courseStat._id} mb={2}>
                         <Typography variant="subtitle2">
-                          {courseStat.course.courseCode}
+                          {courseStat.course ? courseStat.course.courseCode : 'Unknown Course'}
                         </Typography>
                         <Typography variant="body2" color="textSecondary">
                           Attendance: {courseStat.attendancePercentage.toFixed(1)}%

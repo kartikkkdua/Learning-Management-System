@@ -30,10 +30,14 @@ import axios from 'axios';
 
 const AnnouncementManagement = () => {
   const [announcements, setAnnouncements] = useState([]);
+  const [filteredAnnouncements, setFilteredAnnouncements] = useState([]);
   const [courses, setCourses] = useState([]);
   const [faculties, setFaculties] = useState([]);
   const [open, setOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterPriority, setFilterPriority] = useState('');
+  const [filterAudience, setFilterAudience] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -50,12 +54,38 @@ const AnnouncementManagement = () => {
     fetchFaculties();
   }, []);
 
+  useEffect(() => {
+    let filtered = announcements;
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(announcement =>
+        announcement.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        announcement.content.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by priority
+    if (filterPriority) {
+      filtered = filtered.filter(announcement => announcement.priority === filterPriority);
+    }
+
+    // Filter by audience
+    if (filterAudience) {
+      filtered = filtered.filter(announcement => announcement.targetAudience === filterAudience);
+    }
+
+    setFilteredAnnouncements(filtered);
+  }, [announcements, searchTerm, filterPriority, filterAudience]);
+
   const fetchAnnouncements = async () => {
     try {
       const response = await axios.get('http://localhost:3001/api/announcements');
+      console.log('Fetched announcements:', response.data);
       setAnnouncements(response.data);
     } catch (error) {
       console.error('Error fetching announcements:', error);
+      alert(`Error loading announcements: ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -79,21 +109,62 @@ const AnnouncementManagement = () => {
 
   const handleSubmit = async () => {
     try {
+      // Validation
+      if (!formData.title.trim()) {
+        alert('Please enter a title for the announcement');
+        return;
+      }
+      if (!formData.content.trim()) {
+        alert('Please enter content for the announcement');
+        return;
+      }
+
       const user = JSON.parse(localStorage.getItem('user'));
+      if (!user) {
+        alert('User not found. Please log in again.');
+        return;
+      }
+
+      // Clean up the data - remove empty strings for ObjectId fields
       const announcementData = {
-        ...formData,
-        author: user.id
+        title: formData.title,
+        content: formData.content,
+        targetAudience: formData.targetAudience,
+        priority: formData.priority,
+        author: user.id || user._id
       };
 
-      if (editingAnnouncement) {
-        await axios.put(`http://localhost:3001/api/announcements/${editingAnnouncement._id}`, announcementData);
-      } else {
-        await axios.post('http://localhost:3001/api/announcements', announcementData);
+      // Only include course if it's not empty and target audience is specific_course
+      if (formData.targetAudience === 'specific_course' && formData.course) {
+        announcementData.course = formData.course;
       }
+
+      // Only include faculty if it's not empty and target audience is specific_faculty
+      if (formData.targetAudience === 'specific_faculty' && formData.faculty) {
+        announcementData.faculty = formData.faculty;
+      }
+
+      // Only include expiry date if it's not empty
+      if (formData.expiryDate) {
+        announcementData.expiryDate = formData.expiryDate;
+      }
+
+      console.log('Submitting announcement data:', announcementData);
+
+      if (editingAnnouncement) {
+        const response = await axios.put(`http://localhost:3001/api/announcements/${editingAnnouncement._id}`, announcementData);
+        console.log('Update response:', response.data);
+      } else {
+        const response = await axios.post('http://localhost:3001/api/announcements', announcementData);
+        console.log('Create response:', response.data);
+      }
+      
       fetchAnnouncements();
       handleClose();
+      alert(editingAnnouncement ? 'Announcement updated successfully!' : 'Announcement created successfully!');
     } catch (error) {
       console.error('Error saving announcement:', error);
+      alert(`Error saving announcement: ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -172,8 +243,92 @@ const AnnouncementManagement = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={3}>
-        {announcements.map((announcement) => (
+      {/* Search and Filter Controls */}
+      <Grid container spacing={2} mb={3}>
+        <Grid item xs={12} md={4}>
+          <TextField
+            fullWidth
+            label="Search Announcements"
+            variant="outlined"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by title or content..."
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Filter by Priority</InputLabel>
+            <Select
+              value={filterPriority}
+              label="Filter by Priority"
+              onChange={(e) => setFilterPriority(e.target.value)}
+            >
+              <MenuItem value="">All Priorities</MenuItem>
+              <MenuItem value="urgent">Urgent</MenuItem>
+              <MenuItem value="high">High</MenuItem>
+              <MenuItem value="medium">Medium</MenuItem>
+              <MenuItem value="low">Low</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Filter by Audience</InputLabel>
+            <Select
+              value={filterAudience}
+              label="Filter by Audience"
+              onChange={(e) => setFilterAudience(e.target.value)}
+            >
+              <MenuItem value="">All Audiences</MenuItem>
+              <MenuItem value="all">All Users</MenuItem>
+              <MenuItem value="students">Students Only</MenuItem>
+              <MenuItem value="faculty">Faculty Only</MenuItem>
+              <MenuItem value="specific_course">Specific Course</MenuItem>
+              <MenuItem value="specific_faculty">Specific Faculty</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={2}>
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={() => {
+              setSearchTerm('');
+              setFilterPriority('');
+              setFilterAudience('');
+            }}
+            sx={{ height: '56px' }}
+          >
+            Clear Filters
+          </Button>
+        </Grid>
+      </Grid>
+
+      {/* Results Count */}
+      <Box mb={2}>
+        <Typography variant="body2" color="textSecondary">
+          Showing {filteredAnnouncements.length} of {announcements.length} announcements
+        </Typography>
+      </Box>
+
+      {filteredAnnouncements.length === 0 ? (
+        <Box 
+          display="flex" 
+          justifyContent="center" 
+          alignItems="center" 
+          minHeight="200px"
+          width="100%"
+        >
+          <Typography variant="h6" color="textSecondary">
+            {announcements.length === 0 
+              ? "No announcements found. Create your first announcement!" 
+              : "No announcements match your current filters."
+            }
+          </Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={3}>
+          {filteredAnnouncements.map((announcement) => (
           <Grid item xs={12} md={6} lg={4} key={announcement._id}>
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardContent sx={{ flexGrow: 1 }}>
@@ -238,7 +393,8 @@ const AnnouncementManagement = () => {
             </Card>
           </Grid>
         ))}
-      </Grid>
+        </Grid>
+      )}
 
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>
