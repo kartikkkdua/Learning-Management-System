@@ -39,11 +39,48 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Get student's enrolled courses
+// Get student's enrolled courses (accepts both User ID and Student ID)
 router.get('/:id/courses', async (req, res) => {
   try {
     const Course = require('../models/Course');
-    const courses = await Course.find({ enrolledStudents: req.params.id })
+    
+    // Find student using the same logic as enrollment routes
+    let student;
+    let studentObjectId = req.params.id;
+    
+    // First try to find student by Student document ID
+    student = await Student.findById(req.params.id);
+    
+    // If not found, try to find student by User ID
+    if (!student) {
+      student = await Student.findOne({ user: req.params.id });
+      if (student) {
+        studentObjectId = student._id;
+      }
+    }
+    
+    // If still not found, try to find student by email (matching User email)
+    if (!student) {
+      const User = require('../models/User');
+      const user = await User.findById(req.params.id);
+      if (user && user.email) {
+        student = await Student.findOne({ email: user.email });
+        if (student) {
+          studentObjectId = student._id;
+          // Link the user to student for future reference
+          if (!student.user) {
+            student.user = user._id;
+            await student.save();
+          }
+        }
+      }
+    }
+    
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+    
+    const courses = await Course.find({ enrolledStudents: studentObjectId })
       .populate('faculty', 'name code')
       .populate('instructor', 'profile.firstName profile.lastName')
       .sort({ courseCode: 1 });
@@ -53,14 +90,50 @@ router.get('/:id/courses', async (req, res) => {
   }
 });
 
-// Get student's assignments
+// Get student's assignments (accepts both User ID and Student ID)
 router.get('/:id/assignments', async (req, res) => {
   try {
     const Course = require('../models/Course');
     const Assignment = require('../models/Assignment');
     
-    // First get student's enrolled courses
-    const courses = await Course.find({ enrolledStudents: req.params.id });
+    // Find student using the same logic as other endpoints
+    let student;
+    let studentObjectId = req.params.id;
+    
+    // First try to find student by Student document ID
+    student = await Student.findById(req.params.id);
+    
+    // If not found, try to find student by User ID
+    if (!student) {
+      student = await Student.findOne({ user: req.params.id });
+      if (student) {
+        studentObjectId = student._id;
+      }
+    }
+    
+    // If still not found, try to find student by email (matching User email)
+    if (!student) {
+      const User = require('../models/User');
+      const user = await User.findById(req.params.id);
+      if (user && user.email) {
+        student = await Student.findOne({ email: user.email });
+        if (student) {
+          studentObjectId = student._id;
+          // Link the user to student for future reference
+          if (!student.user) {
+            student.user = user._id;
+            await student.save();
+          }
+        }
+      }
+    }
+    
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+    
+    // Get student's enrolled courses
+    const courses = await Course.find({ enrolledStudents: studentObjectId });
     const courseIds = courses.map(course => course._id);
     
     // Then get assignments for those courses
@@ -75,14 +148,50 @@ router.get('/:id/assignments', async (req, res) => {
   }
 });
 
-// Get student's grades
+// Get student's grades (accepts both User ID and Student ID)
 router.get('/:id/grades', async (req, res) => {
   try {
     const Course = require('../models/Course');
     const Assignment = require('../models/Assignment');
     
+    // Find student using the same logic as other endpoints
+    let student;
+    let studentObjectId = req.params.id;
+    
+    // First try to find student by Student document ID
+    student = await Student.findById(req.params.id);
+    
+    // If not found, try to find student by User ID
+    if (!student) {
+      student = await Student.findOne({ user: req.params.id });
+      if (student) {
+        studentObjectId = student._id;
+      }
+    }
+    
+    // If still not found, try to find student by email (matching User email)
+    if (!student) {
+      const User = require('../models/User');
+      const user = await User.findById(req.params.id);
+      if (user && user.email) {
+        student = await Student.findOne({ email: user.email });
+        if (student) {
+          studentObjectId = student._id;
+          // Link the user to student for future reference
+          if (!student.user) {
+            student.user = user._id;
+            await student.save();
+          }
+        }
+      }
+    }
+    
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+    
     // Get student's enrolled courses
-    const courses = await Course.find({ enrolledStudents: req.params.id })
+    const courses = await Course.find({ enrolledStudents: studentObjectId })
       .populate('faculty', 'name code');
     
     const grades = [];
@@ -103,7 +212,7 @@ router.get('/:id/grades', async (req, res) => {
       
       for (const assignment of assignments) {
         const submission = assignment.submissions?.find(
-          sub => sub.student.toString() === req.params.id
+          sub => sub.student.toString() === studentObjectId.toString()
         );
         
         if (submission && submission.grade !== undefined) {
@@ -136,20 +245,56 @@ router.get('/:id/grades', async (req, res) => {
   }
 });
 
-// Get student's attendance
+// Get student's attendance (accepts both User ID and Student ID)
 router.get('/:id/attendance', async (req, res) => {
   try {
     const Attendance = require('../models/Attendance');
     const Course = require('../models/Course');
     
+    // Find student using the same logic as other endpoints
+    let student;
+    let studentObjectId = req.params.id;
+    
+    // First try to find student by Student document ID
+    student = await Student.findById(req.params.id);
+    
+    // If not found, try to find student by User ID
+    if (!student) {
+      student = await Student.findOne({ user: req.params.id });
+      if (student) {
+        studentObjectId = student._id;
+      }
+    }
+    
+    // If still not found, try to find student by email (matching User email)
+    if (!student) {
+      const User = require('../models/User');
+      const user = await User.findById(req.params.id);
+      if (user && user.email) {
+        student = await Student.findOne({ email: user.email });
+        if (student) {
+          studentObjectId = student._id;
+          // Link the user to student for future reference
+          if (!student.user) {
+            student.user = user._id;
+            await student.save();
+          }
+        }
+      }
+    }
+    
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+    
     // Get student's enrolled courses
-    const courses = await Course.find({ enrolledStudents: req.params.id });
+    const courses = await Course.find({ enrolledStudents: studentObjectId });
     const courseIds = courses.map(course => course._id);
     
     // Get attendance records for those courses
     const attendanceRecords = await Attendance.find({ 
       course: { $in: courseIds },
-      'records.student': req.params.id
+      'records.student': studentObjectId
     })
     .populate('course', 'courseCode title')
     .sort({ date: -1 });
@@ -166,7 +311,7 @@ router.get('/:id/attendance', async (req, res) => {
       
       courseAttendance.forEach(record => {
         const studentRecord = record.records.find(
-          r => r.student.toString() === req.params.id
+          r => r.student.toString() === studentObjectId.toString()
         );
         
         if (studentRecord) {

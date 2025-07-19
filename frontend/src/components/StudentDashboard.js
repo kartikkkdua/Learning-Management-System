@@ -45,9 +45,10 @@ const StudentDashboard = ({ user }) => {
     try {
       const studentId = user.id || user._id;
       
-      // Fetch student's actual enrolled courses
-      const coursesRes = await axios.get(`http://localhost:3001/api/students/${studentId}/courses`);
-      const enrolledCourses = coursesRes.data;
+      // Fetch student's enrolled courses using the enrollment system
+      const enrollmentRes = await axios.get(`http://localhost:3001/api/enrollments/student/${studentId}`);
+      const enrolledCourses = enrollmentRes.data.enrolledCourses || [];
+      const totalCredits = enrollmentRes.data.totalCredits || 0;
 
       // Fetch student's assignments
       const assignmentsRes = await axios.get(`http://localhost:3001/api/students/${studentId}/assignments`);
@@ -77,7 +78,6 @@ const StudentDashboard = ({ user }) => {
       const attendancePercentage = totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 0;
 
       // Calculate grade stats
-      const totalCredits = enrolledCourses.reduce((sum, course) => sum + course.credits, 0);
       const totalAssignments = recentAssignments.length;
       const completedAssignments = recentAssignments.filter(assignment => 
         assignment.submissions?.some(sub => sub.student === studentId)

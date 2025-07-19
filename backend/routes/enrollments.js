@@ -2,49 +2,30 @@ const express = require('express');
 const router = express.Router();
 const Course = require('../models/Course');
 const Student = require('../models/Student');
+const Enrollment = require('../models/Enrollment');
+const NotificationService = require('../services/notificationService');
 
 // Get all enrollments with course and student details
 router.get('/', async (req, res) => {
   try {
-    const courses = await Course.find()
-      .populate('faculty', 'name code')
-      .populate('enrolledStudents', 'firstName lastName studentId email faculty')
+    const enrollments = await Enrollment.find({ status: 'enrolled' })
       .populate({
-        path: 'enrolledStudents',
+        path: 'student',
+        select: 'studentId firstName lastName email faculty',
         populate: {
           path: 'faculty',
           select: 'name code'
         }
       })
-      .sort({ courseCode: 1 });
-    
-    // Transform data for easier frontend consumption
-    const enrollments = [];
-    courses.forEach(course => {
-      course.enrolledStudents.forEach(student => {
-        enrollments.push({
-          _id: `${course._id}_${student._id}`,
-          course: {
-            _id: course._id,
-            courseCode: course.courseCode,
-            title: course.title,
-            credits: course.credits,
-            semester: course.semester,
-            year: course.year,
-            faculty: course.faculty
-          },
-          student: {
-            _id: student._id,
-            studentId: student.studentId,
-            firstName: student.firstName,
-            lastName: student.lastName,
-            email: student.email,
-            faculty: student.faculty
-          },
-          enrolledAt: student.enrollmentDate || new Date()
-        });
-      });
-    });
+      .populate({
+        path: 'course',
+        select: 'courseCode title credits semester year faculty',
+        populate: {
+          path: 'faculty',
+          select: 'name code'
+        }
+      })
+      .sort({ enrolledAt: -1 });
     
     res.json(enrollments);
   } catch (error) {
@@ -85,20 +66,48 @@ router.get('/course/:courseId', async (req, res) => {
   }
 });
 
-// Get enrollments for a specific student
+// Get enrollments for a specific student (accepts both User ID and Student ID)
 router.get('/student/:studentId', async (req, res) => {
   try {
-    const courses = await Course.find({ enrolledStudents: req.params.studentId })
-      .populate('faculty', 'name code')
-      .populate('instructor', 'profile.firstName profile.lastName')
-      .sort({ courseCode: 1 });
+    let student;
+    let studentObjectId = req.params.studentId;
     
-    const student = await Student.findById(req.params.studentId)
-      .populate('faculty', 'name code');
+    // First try to find student by Student document ID
+    student = await Student.findById(req.params.studentId).populate('faculty', 'name code');
+    
+    // If not found, try to find student by User ID
+    if (!student) {
+      student = await Student.findOne({ user: req.params.studentId }).populate('faculty', 'name code');
+      if (student) {
+        studentObjectId = student._id;
+      }
+    }
+    
+    // If still not found, try to find student by email (matching User email)
+    if (!student) {
+      const User = require('../models/User');
+      const user = await User.findById(req.params.studentId);
+      if (user && user.email) {
+        student = await Student.findOne({ email: user.email }).populate('faculty', 'name code');
+        if (student) {
+          studentObjectId = student._id;
+          // Link the user to student for future reference
+          if (!student.user) {
+            student.user = user._id;
+            await student.save();
+          }
+        }
+      }
+    }
     
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }
+    
+    const courses = await Course.find({ enrolledStudents: studentObjectId })
+      .populate('faculty', 'name code')
+      .populate('instructor', 'profile.firstName profile.lastName')
+      .sort({ courseCode: 1 });
     
     res.json({
       student: {
@@ -117,7 +126,7 @@ router.get('/student/:studentId', async (req, res) => {
   }
 });
 
-// Enroll student in course
+// Enroll student in course (accepts both User ID and Student ID)
 router.post('/enroll', async (req, res) => {
   try {
     const { studentId, courseId } = req.body;
@@ -127,19 +136,76 @@ router.post('/enroll', async (req, res) => {
     }
     
     const course = await Course.findById(courseId);
-    const student = await Student.findById(studentId);
-    
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Find student using the same logic as the GET endpoint
+    let student;
+    let studentObjectId = studentId;
+    
+    // First try to find student by Student document ID
+    student = await Student.findById(studentId);
+    
+    // If not found, try to find student by User ID
+    if (!student) {
+      student = await Student.findOne({ user: studentId });
+      if (student) {
+        studentObjectId = student._id;
+      }
+    }
+    
+    // If still not found, try to find student by email (matching User email)
+    if (!student) {
+      const User = require('../models/User');
+      const user = await User.findById(studentId);
+      if (user && user.email) {
+        student = await Student.findOne({ email: user.email });
+        if (student) {
+          studentObjectId = student._id;
+          // Link the user to student for future reference
+          if (!student.user) {
+            student.user = user._id;
+            await student.save();
+          }
+        }
+      }
     }
     
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }
     
-    // Check if student is already enrolled
-    if (course.enrolledStudents.includes(studentId)) {
+    // Check if student is already enrolled (check both Course and Enrollment models)
+    const existingEnrollment = await Enrollment.findOne({
+      student: studentObjectId,
+      course: courseId,
+      status: 'enrolled'
+    });
+    
+    if (existingEnrollment || course.enrolledStudents.includes(studentObjectId)) {
       return res.status(400).json({ message: 'Student is already enrolled in this course' });
+    }
+    
+    // Check prerequisites
+    if (course.prerequisites && course.prerequisites.length > 0) {
+      const completedCourses = await Enrollment.find({
+        student: studentObjectId,
+        status: { $in: ['completed'] },
+        course: { $in: course.prerequisites }
+      });
+      
+      if (completedCourses.length < course.prerequisites.length) {
+        const missingPrereqs = await Course.find({
+          _id: { $in: course.prerequisites },
+          _id: { $nin: completedCourses.map(c => c.course) }
+        }).select('courseCode title');
+        
+        return res.status(400).json({ 
+          message: 'Prerequisites not met',
+          missingPrerequisites: missingPrereqs.map(c => `${c.courseCode} - ${c.title}`)
+        });
+      }
     }
     
     // Check course capacity
@@ -147,9 +213,24 @@ router.post('/enroll', async (req, res) => {
       return res.status(400).json({ message: 'Course is at full capacity' });
     }
     
+    // Create enrollment record
+    const enrollment = new Enrollment({
+      student: studentObjectId,
+      course: courseId,
+      semester: course.semester,
+      year: course.year,
+      status: 'enrolled'
+    });
+    await enrollment.save();
+    
     // Add student to course
-    course.enrolledStudents.push(studentId);
+    course.enrolledStudents.push(studentObjectId);
     await course.save();
+    
+    // Create enrollment notification
+    if (student.user) {
+      await NotificationService.createEnrollmentNotification(student.user, course);
+    }
     
     // Return updated course with populated students
     const updatedCourse = await Course.findById(courseId)
@@ -252,7 +333,7 @@ router.post('/bulk-enroll', async (req, res) => {
   }
 });
 
-// Remove student from course
+// Remove student from course (accepts both User ID and Student ID)
 router.post('/unenroll', async (req, res) => {
   try {
     const { studentId, courseId } = req.body;
@@ -262,10 +343,40 @@ router.post('/unenroll', async (req, res) => {
     }
     
     const course = await Course.findById(courseId);
-    const student = await Student.findById(studentId);
-    
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Find student using the same logic as the enroll endpoint
+    let student;
+    let studentObjectId = studentId;
+    
+    // First try to find student by Student document ID
+    student = await Student.findById(studentId);
+    
+    // If not found, try to find student by User ID
+    if (!student) {
+      student = await Student.findOne({ user: studentId });
+      if (student) {
+        studentObjectId = student._id;
+      }
+    }
+    
+    // If still not found, try to find student by email (matching User email)
+    if (!student) {
+      const User = require('../models/User');
+      const user = await User.findById(studentId);
+      if (user && user.email) {
+        student = await Student.findOne({ email: user.email });
+        if (student) {
+          studentObjectId = student._id;
+          // Link the user to student for future reference
+          if (!student.user) {
+            student.user = user._id;
+            await student.save();
+          }
+        }
+      }
     }
     
     if (!student) {
@@ -273,13 +384,26 @@ router.post('/unenroll', async (req, res) => {
     }
     
     // Check if student is enrolled
-    if (!course.enrolledStudents.includes(studentId)) {
+    const existingEnrollment = await Enrollment.findOne({
+      student: studentObjectId,
+      course: courseId,
+      status: 'enrolled'
+    });
+    
+    if (!existingEnrollment && !course.enrolledStudents.includes(studentObjectId)) {
       return res.status(400).json({ message: 'Student is not enrolled in this course' });
+    }
+    
+    // Update enrollment record to 'dropped'
+    if (existingEnrollment) {
+      existingEnrollment.status = 'dropped';
+      existingEnrollment.droppedAt = new Date();
+      await existingEnrollment.save();
     }
     
     // Remove student from course
     course.enrolledStudents = course.enrolledStudents.filter(
-      id => id.toString() !== studentId.toString()
+      id => id.toString() !== studentObjectId.toString()
     );
     await course.save();
     
@@ -374,6 +498,64 @@ router.get('/stats', async (req, res) => {
     res.json(stats);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Create student profile for a user (utility endpoint)
+router.post('/create-student-profile', async (req, res) => {
+  try {
+    const { userId, studentId, firstName, lastName, email, facultyId } = req.body;
+    
+    if (!userId || !studentId || !firstName || !lastName || !email) {
+      return res.status(400).json({ 
+        message: 'User ID, Student ID, first name, last name, and email are required' 
+      });
+    }
+    
+    // Check if student already exists
+    const existingStudent = await Student.findOne({ 
+      $or: [{ user: userId }, { email: email }, { studentId: studentId }] 
+    });
+    
+    if (existingStudent) {
+      return res.status(400).json({ 
+        message: 'Student profile already exists for this user or email' 
+      });
+    }
+    
+    // Get default faculty if not provided
+    let faculty = facultyId;
+    if (!faculty) {
+      const Faculty = require('../models/Faculty');
+      const defaultFaculty = await Faculty.findOne();
+      if (defaultFaculty) {
+        faculty = defaultFaculty._id;
+      } else {
+        return res.status(400).json({ 
+          message: 'No faculty found. Please create a faculty first or provide facultyId.' 
+        });
+      }
+    }
+    
+    const student = new Student({
+      user: userId,
+      studentId,
+      firstName,
+      lastName,
+      email,
+      faculty
+    });
+    
+    await student.save();
+    
+    const populatedStudent = await Student.findById(student._id).populate('faculty', 'name code');
+    
+    res.status(201).json({
+      message: 'Student profile created successfully',
+      student: populatedStudent
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 

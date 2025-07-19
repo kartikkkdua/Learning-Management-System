@@ -1,19 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import Navbar from './components/Navbar';
 import Login from './components/Login';
-import Dashboard from './components/Dashboard';
-import FacultyManagement from './components/FacultyManagement';
-import StudentManagement from './components/StudentManagement';
-import CourseManagement from './components/CourseManagement';
-import AssignmentManagement from './components/AssignmentManagement';
-import AnnouncementManagement from './components/AnnouncementManagement';
-import AttendanceManagement from './components/AttendanceManagement';
-import GradingSystem from './components/GradingSystem';
-import EnrollmentManagement from './components/EnrollmentManagement';
 import StudentPortal from './components/StudentPortal';
+import AdminPortal from './components/AdminPortal';
+import FacultyPortal from './components/FacultyPortal';
 import './App.css';
 
 const theme = createTheme({
@@ -64,34 +55,17 @@ function App() {
     );
   }
 
-  // Render different interfaces based on user role
-  if (user.role === 'student') {
-    return (
-      <StudentPortal user={user} onLogout={handleLogout} />
-    );
-  }
-
-  // Admin/Faculty interface
+  // Role-based routing
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <div className="App">
-          <Navbar user={user} onLogout={handleLogout} />
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/faculties" element={<FacultyManagement />} />
-            <Route path="/students" element={<StudentManagement />} />
-            <Route path="/courses" element={<CourseManagement />} />
-            <Route path="/assignments" element={<AssignmentManagement />} />
-            <Route path="/announcements" element={<AnnouncementManagement />} />
-            <Route path="/attendance" element={<AttendanceManagement />} />
-            <Route path="/grading" element={<GradingSystem />} />
-            <Route path="/enrollments" element={<EnrollmentManagement />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </div>
-      </Router>
+      {user.role === 'admin' ? (
+        <AdminPortal user={user} onLogout={handleLogout} />
+      ) : user.role === 'faculty' ? (
+        <FacultyPortal user={user} onLogout={handleLogout} />
+      ) : (
+        <StudentPortal user={user} onLogout={handleLogout} />
+      )}
     </ThemeProvider>
   );
 }

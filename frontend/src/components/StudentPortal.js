@@ -10,6 +10,12 @@ import StudentGrades from './StudentGrades';
 import StudentAnnouncements from './StudentAnnouncements';
 import StudentProfile from './StudentProfile';
 import StudentAttendance from './StudentAttendance';
+import StudentProgress from './StudentProgress';
+import AcademicCalendar from './AcademicCalendar';
+import NotificationCenter from './NotificationCenter';
+import StudentWaitlist from './StudentWaitlist';
+import DiscussionForum from './DiscussionForum';
+import StudentSettings from './StudentSettings';
 
 const studentTheme = createTheme({
   palette: {
@@ -39,6 +45,12 @@ const StudentPortal = ({ user, onLogout }) => {
             <Route path="/grades" element={<StudentGrades user={user} />} />
             <Route path="/announcements" element={<StudentAnnouncements user={user} />} />
             <Route path="/attendance" element={<StudentAttendance user={user} />} />
+            <Route path="/progress" element={<StudentProgress user={user} />} />
+            <Route path="/calendar" element={<AcademicCalendar user={user} />} />
+            <Route path="/notifications" element={<NotificationCenter user={user} />} />
+            <Route path="/waitlist" element={<StudentWaitlist user={user} />} />
+            <Route path="/discussions/:courseId" element={<DiscussionForum user={user} />} />
+            <Route path="/settings" element={<StudentSettings user={user} />} />
             <Route path="/profile" element={<StudentProfile user={user} />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

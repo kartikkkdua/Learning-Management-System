@@ -37,9 +37,9 @@ const StudentAnnouncements = ({ user }) => {
     try {
       const studentId = user.id || user._id;
       
-      // First get student's enrolled courses
-      const coursesRes = await axios.get(`http://localhost:3001/api/students/${studentId}/courses`);
-      const enrolledCourses = coursesRes.data;
+      // First get student's enrolled courses using enrollment system
+      const enrollmentRes = await axios.get(`http://localhost:3001/api/enrollments/student/${studentId}`);
+      const enrolledCourses = enrollmentRes.data.enrolledCourses || [];
       const enrolledCourseIds = enrolledCourses.map(course => course._id);
       
       // Then get all announcements

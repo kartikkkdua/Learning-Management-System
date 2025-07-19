@@ -25,6 +25,10 @@ app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/enrollments', require('./routes/enrollments'));
+app.use('/api/calendar', require('./routes/calendar'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/waitlist', require('./routes/waitlist'));
+app.use('/api/discussions', require('./routes/discussions'));
 
 app.get('/', (req, res) => {
   res.json({ message: 'LMS Backend API is running!' });
