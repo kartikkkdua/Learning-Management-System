@@ -83,4 +83,56 @@ notificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 // Auto-delete expired notifications
 notificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
+// Static method to create and emit notification
+notificationSchema.statics.createAndEmit = async function(notificationData, io) {
+  const notification = new this(notificationData);
+  await notification.save();
+  
+  // Populate related data
+  await notification.populate([
+    { path: 'metadata.course', select: 'name code' },
+    { path: 'metadata.assignment', select: 'title dueDate' }
+  ]);
+  
+  // Emit to specific user
+  if (io) {
+    io.to(`user_${notification.recipient}`).emit('newNotification', notification);
+    
+    // Also emit count update
+    const unreadCount = await this.countDocuments({ 
+      recipient: notification.recipient, 
+      isRead: false 
+    });
+    io.to(`user_${notification.recipient}`).emit('notificationCount', unreadCount);
+  }
+  
+  return notification;
+};
+
+// Static method to broadcast to multiple users
+notificationSchema.statics.broadcastToUsers = async function(userIds, notificationData, io) {
+  const notifications = userIds.map(userId => ({
+    ...notificationData,
+    recipient: userId
+  }));
+  
+  const createdNotifications = await this.insertMany(notifications);
+  
+  if (io) {
+    // Emit to each user
+    for (const notification of createdNotifications) {
+      io.to(`user_${notification.recipient}`).emit('newNotification', notification);
+      
+      // Update count
+      const unreadCount = await this.countDocuments({ 
+        recipient: notification.recipient, 
+        isRead: false 
+      });
+      io.to(`user_${notification.recipient}`).emit('notificationCount', unreadCount);
+    }
+  }
+  
+  return createdNotifications;
+};
+
 module.exports = mongoose.model('Notification', notificationSchema);

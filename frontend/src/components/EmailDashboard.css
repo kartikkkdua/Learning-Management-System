@@ -1,0 +1,292 @@
+.email-dashboard {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.email-dashboard-header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.email-dashboard-header h1 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.email-dashboard-header p {
+  color: #666;
+  font-size: 16px;
+}
+
+.email-tabs {
+  display: flex;
+  border-bottom: 2px solid #eee;
+  margin-bottom: 30px;
+  gap: 5px;
+}
+
+.tab-button {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-button:hover {
+  color: #007bff;
+  background: #f8f9fa;
+}
+
+.tab-button.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background: #f8f9fa;
+}
+
+.tab-icon {
+  font-size: 16px;
+}
+
+.email-content {
+  min-height: 500px;
+}
+
+/* Email Templates Styles */
+.email-templates {
+  padding: 20px;
+}
+
+.templates-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.templates-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.template-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s;
+}
+
+.template-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.template-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.template-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.template-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.btn-icon:hover {
+  background: #f0f0f0;
+}
+
+.template-content p {
+  margin: 8px 0;
+  color: #555;
+}
+
+.template-preview {
+  font-style: italic;
+  color: #777;
+}
+
+.template-meta {
+  font-size: 12px;
+  color: #999;
+}
+
+.template-footer {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+/* Email History Styles */
+.email-history {
+  padding: 20px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.history-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.history-filters {
+  display: flex;
+  gap: 10px;
+}
+
+.history-filters .form-control {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.history-table {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.history-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table th,
+.history-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.history-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.history-table tr:hover {
+  background: #f8f9fa;
+}
+
+.status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status.delivered {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status.failed {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* Button Styles */
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .email-dashboard {
+    padding: 10px;
+  }
+  
+  .email-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .templates-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .history-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .history-filters {
+    justify-content: stretch;
+  }
+  
+  .history-table {
+    overflow-x: auto;
+  }
+  
+  .history-table table {
+    min-width: 600px;
+  }
+}

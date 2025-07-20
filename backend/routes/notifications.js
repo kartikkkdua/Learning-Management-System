@@ -3,6 +3,8 @@ const router = express.Router();
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const Student = require('../models/Student');
+const NotificationService = require('../services/notificationService');
+const auth = require('../middleware/auth');
 
 // Get notifications for a user
 router.get('/user/:userId', async (req, res) => {
@@ -103,23 +105,21 @@ router.delete('/:notificationId', async (req, res) => {
   }
 });
 
-// Create notification (system/admin use)
+// Create notification with real-time emission
 router.post('/', async (req, res) => {
   try {
-    const notification = new Notification(req.body);
-    await notification.save();
+    const io = req.app.get('io');
+    const notificationService = new NotificationService(io);
     
-    const populatedNotification = await Notification.findById(notification._id)
-      .populate('metadata.course', 'courseCode title')
-      .populate('metadata.assignment', 'title dueDate');
+    const notification = await notificationService.createNotification(req.body);
     
-    res.status(201).json(populatedNotification);
+    res.status(201).json(notification);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
 
-// Bulk create notifications
+// Bulk create notifications with real-time emission
 router.post('/bulk', async (req, res) => {
   try {
     const { recipients, title, message, type, priority = 'medium', metadata } = req.body;
@@ -128,21 +128,51 @@ router.post('/bulk', async (req, res) => {
       return res.status(400).json({ message: 'Recipients array is required' });
     }
     
-    const notifications = recipients.map(recipientId => ({
-      recipient: recipientId,
-      title,
-      message,
-      type,
-      priority,
-      metadata
-    }));
+    const io = req.app.get('io');
+    const notificationService = new NotificationService(io);
     
-    const createdNotifications = await Notification.insertMany(notifications);
+    const notificationData = { title, message, type, priority, metadata };
+    const notifications = await notificationService.broadcastNotification(recipients, notificationData);
     
     res.status(201).json({
       message: 'Bulk notifications created successfully',
-      count: createdNotifications.length,
-      notifications: createdNotifications
+      count: notifications.length,
+      notifications
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Enhanced mark as read with real-time updates
+router.patch('/:notificationId/read', async (req, res) => {
+  try {
+    const io = req.app.get('io');
+    const notificationService = new NotificationService(io);
+    
+    const notification = await Notification.findById(req.params.notificationId);
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+    
+    const updatedNotification = await notificationService.markAsRead(req.params.notificationId, notification.recipient);
+    
+    res.json(updatedNotification);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Enhanced mark all as read with real-time updates
+router.patch('/user/:userId/read-all', async (req, res) => {
+  try {
+    const io = req.app.get('io');
+    const notificationService = new NotificationService(io);
+    
+    await notificationService.markAllAsRead(req.params.userId);
+    
+    res.json({ 
+      message: 'All notifications marked as read'
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

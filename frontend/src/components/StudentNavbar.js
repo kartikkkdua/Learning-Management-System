@@ -29,6 +29,7 @@ import {
   HourglassEmpty,
   Settings
 } from '@mui/icons-material';
+import NotificationBell from './NotificationBell';
 
 const StudentNavbar = ({ user, onLogout }) => {
   const location = useLocation();
@@ -177,15 +178,7 @@ const StudentNavbar = ({ user, onLogout }) => {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton 
-            color="inherit"
-            component={Link}
-            to="/notifications"
-          >
-            <Badge badgeContent={3} color="error">
-              <Notifications />
-            </Badge>
-          </IconButton>
+          <NotificationBell />
           
           <Typography variant="body2" sx={{ mr: 1 }}>
             {user?.profile?.firstName || user?.username}

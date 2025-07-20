@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { School } from '@mui/icons-material';
 import axios from 'axios';
+import { API_URL } from '../config/api';
 
 const Login = ({ onLogin }) => {
   const [formData, setFormData] = useState({
@@ -41,7 +42,7 @@ const Login = ({ onLogin }) => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/login', formData);
+      const response = await axios.post(`${API_URL}/auth/login`, formData);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       onLogin(response.data.user);
@@ -58,7 +59,7 @@ const Login = ({ onLogin }) => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/register', registerData);
+      const response = await axios.post(`${API_URL}/auth/register`, registerData);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       onLogin(response.data.user);

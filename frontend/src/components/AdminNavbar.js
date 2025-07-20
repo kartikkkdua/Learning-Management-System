@@ -8,8 +8,7 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  IconButton,
-  Badge
+  IconButton
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -23,10 +22,12 @@ import {
   Settings,
   Assessment,
   CalendarToday,
-  Notifications,
-  SupervisorAccount,
-  GroupAdd
+  GroupAdd,
+  Analytics,
+  Campaign,
+  Email
 } from '@mui/icons-material';
+import NotificationBell from './NotificationBell';
 
 const AdminNavbar = ({ user, onLogout }) => {
   const location = useLocation();
@@ -146,18 +147,49 @@ const AdminNavbar = ({ user, onLogout }) => {
           >
             Reports
           </Button>
+          
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/analytics"
+            startIcon={<Analytics />}
+            sx={{ 
+              backgroundColor: isActive('/analytics') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Analytics
+          </Button>
+          
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/create-notification"
+            startIcon={<Campaign />}
+            sx={{ 
+              backgroundColor: isActive('/create-notification') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Create Alert
+          </Button>
+          
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/email"
+            startIcon={<Email />}
+            sx={{ 
+              backgroundColor: isActive('/email') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Email
+          </Button>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton 
-            color="inherit"
-            component={Link}
-            to="/notifications"
-          >
-            <Badge badgeContent={5} color="error">
-              <Notifications />
-            </Badge>
-          </IconButton>
+          <NotificationBell />
           
           <Typography variant="body2" sx={{ mr: 1 }}>
             {user?.profile?.firstName || user?.username}

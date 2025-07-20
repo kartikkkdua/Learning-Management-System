@@ -16,6 +16,7 @@ import {
   Avatar,
   Button
 } from '@mui/material';
+import QuickNotificationWidget from './QuickNotificationWidget';
 import {
   MenuBook,
   People,
@@ -49,13 +50,13 @@ const FacultyDashboard = ({ user }) => {
   const fetchDashboardData = async () => {
     try {
       const facultyId = user.id || user._id;
-      
+
       // Fetch faculty's courses
       const coursesRes = await axios.get(`http://localhost:3001/api/courses?instructor=${facultyId}`);
       const myCourses = coursesRes.data || [];
-      
+
       // Calculate total students across all courses
-      const totalStudents = myCourses.reduce((sum, course) => 
+      const totalStudents = myCourses.reduce((sum, course) =>
         sum + (course.enrolledStudents?.length || 0), 0
       );
 
@@ -142,11 +143,11 @@ const FacultyDashboard = ({ user }) => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box display="flex" alignItems="center" mb={4}>
-        <Avatar 
-          sx={{ 
-            width: 64, 
-            height: 64, 
-            bgcolor: 'primary.main', 
+        <Avatar
+          sx={{
+            width: 64,
+            height: 64,
+            bgcolor: 'primary.main',
             mr: 3,
             fontSize: '1.5rem'
           }}
@@ -155,14 +156,14 @@ const FacultyDashboard = ({ user }) => {
         </Avatar>
         <Box>
           <Typography variant="h4" gutterBottom>
-            Welcome, Prof. {user?.profile?.lastName || user?.username}!
+            Welcome, {user?.profile?.firstName || user?.username}!
           </Typography>
           <Typography variant="subtitle1" color="textSecondary">
             Faculty Member | {user?.profile?.email || user?.email}
           </Typography>
         </Box>
       </Box>
-      
+
       {/* Stats Cards */}
       <Grid container spacing={3} mb={4}>
         <Grid item xs={12} sm={6} md={3}>
@@ -175,7 +176,7 @@ const FacultyDashboard = ({ user }) => {
             action="View All"
           />
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Total Students"
@@ -186,7 +187,7 @@ const FacultyDashboard = ({ user }) => {
             action="View Students"
           />
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Pending Assignments"
@@ -197,7 +198,7 @@ const FacultyDashboard = ({ user }) => {
             action="Grade Now"
           />
         </Grid>
-        
+
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Discussions"
@@ -207,6 +208,13 @@ const FacultyDashboard = ({ user }) => {
             subtitle="Active discussions"
             action="View All"
           />
+        </Grid>
+      </Grid>
+
+      {/* Quick Notification Widget */}
+      <Grid container spacing={3} mb={4}>
+        <Grid item xs={12} md={6}>
+          <QuickNotificationWidget user={user} />
         </Grid>
       </Grid>
 
@@ -234,25 +242,25 @@ const FacultyDashboard = ({ user }) => {
                           <Typography variant="caption">
                             {course.enrolledStudents?.length || 0}/{course.capacity} students
                           </Typography>
-                          <LinearProgress 
-                            variant="determinate" 
-                            value={((course.enrolledStudents?.length || 0) / course.capacity) * 100} 
+                          <LinearProgress
+                            variant="determinate"
+                            value={((course.enrolledStudents?.length || 0) / course.capacity) * 100}
                             sx={{ flexGrow: 1, height: 4, borderRadius: 2 }}
                           />
                         </Box>
                       </Box>
                     }
                   />
-                  <Chip 
-                    label={`${course.semester} ${course.year}`} 
-                    size="small" 
-                    color="primary" 
+                  <Chip
+                    label={`${course.semester} ${course.year}`}
+                    size="small"
+                    color="primary"
                     variant="outlined"
                   />
                 </ListItem>
               ))}
             </List>
-            
+
             {dashboardData.myCourses.length === 0 && (
               <Box textAlign="center" py={4}>
                 <MenuBook sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
@@ -297,7 +305,7 @@ const FacultyDashboard = ({ user }) => {
                 </ListItem>
               ))}
             </List>
-            
+
             {dashboardData.upcomingClasses.length === 0 && (
               <Box textAlign="center" py={4}>
                 <Schedule sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
@@ -334,15 +342,15 @@ const FacultyDashboard = ({ user }) => {
                       </Box>
                     }
                   />
-                  <Chip 
-                    label="PENDING" 
-                    size="small" 
+                  <Chip
+                    label="PENDING"
+                    size="small"
                     color="warning"
                   />
                 </ListItem>
               ))}
             </List>
-            
+
             {dashboardData.pendingAssignments.length === 0 && (
               <Box textAlign="center" py={4}>
                 <CheckCircle sx={{ fontSize: 48, color: 'success.main', mb: 2 }} />

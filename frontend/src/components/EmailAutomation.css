@@ -1,0 +1,147 @@
+.email-automation {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.email-automation-header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.email-automation-header h1 {
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 28px;
+}
+
+.email-automation-header p {
+  color: #666;
+  font-size: 16px;
+  margin-bottom: 30px;
+}
+
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  border-left: 4px solid #007bff;
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  color: #666;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.email-automation-tabs {
+  display: flex;
+  border-bottom: 2px solid #eee;
+  margin-bottom: 30px;
+  gap: 5px;
+  overflow-x: auto;
+}
+
+.tab-button {
+  padding: 15px 25px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.tab-button:hover {
+  color: #007bff;
+  background: #f8f9fa;
+}
+
+.tab-button.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background: #f8f9fa;
+}
+
+.tab-icon {
+  font-size: 18px;
+}
+
+.email-automation-content {
+  min-height: 600px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .email-automation {
+    padding: 10px;
+  }
+  
+  .stats-overview {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+  
+  .stat-card {
+    padding: 15px;
+  }
+  
+  .stat-number {
+    font-size: 24px;
+  }
+  
+  .email-automation-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab-button {
+    padding: 12px 20px;
+    font-size: 13px;
+  }
+  
+  .email-automation-content {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-overview {
+    grid-template-columns: 1fr;
+  }
+  
+  .email-automation-header h1 {
+    font-size: 24px;
+  }
+  
+  .tab-button {
+    padding: 10px 15px;
+    font-size: 12px;
+  }
+}

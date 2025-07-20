@@ -5,6 +5,9 @@ import Login from './components/Login';
 import StudentPortal from './components/StudentPortal';
 import AdminPortal from './components/AdminPortal';
 import FacultyPortal from './components/FacultyPortal';
+import { NotificationProvider } from './contexts/NotificationContext';
+import { API_URL } from './config/api';
+import axios from 'axios';
 import './App.css';
 
 const theme = createTheme({
@@ -24,13 +27,26 @@ function App() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    if (token && userData) {
-      setUser(JSON.parse(userData));
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      fetchUserData();
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/auth/me`);
+      setUser(response.data);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      localStorage.removeItem('token');
+      delete axios.defaults.headers.common['Authorization'];
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = (userData) => {
     setUser(userData);
@@ -59,13 +75,15 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {user.role === 'admin' ? (
-        <AdminPortal user={user} onLogout={handleLogout} />
-      ) : user.role === 'faculty' ? (
-        <FacultyPortal user={user} onLogout={handleLogout} />
-      ) : (
-        <StudentPortal user={user} onLogout={handleLogout} />
-      )}
+      <NotificationProvider user={user}>
+        {user.role === 'admin' ? (
+          <AdminPortal user={user} onLogout={handleLogout} />
+        ) : user.role === 'faculty' ? (
+          <FacultyPortal user={user} onLogout={handleLogout} />
+        ) : (
+          <StudentPortal user={user} onLogout={handleLogout} />
+        )}
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

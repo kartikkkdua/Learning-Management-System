@@ -13,6 +13,8 @@ import AnnouncementManagement from './AnnouncementManagement';
 import DiscussionForum from './DiscussionForum';
 import AcademicCalendar from './AcademicCalendar';
 import NotificationCenter from './NotificationCenter';
+import CreateNotification from './CreateNotification';
+import EmailDashboard from './EmailDashboard';
 
 const facultyTheme = createTheme({
   palette: {
@@ -46,6 +48,8 @@ const FacultyPortal = ({ user, onLogout }) => {
             <Route path="/discussions" element={<DiscussionForum user={user} />} />
             <Route path="/calendar" element={<AcademicCalendar user={user} />} />
             <Route path="/notifications" element={<NotificationCenter user={user} />} />
+            <Route path="/create-notification" element={<CreateNotification user={user} />} />
+            <Route path="/email" element={<EmailDashboard user={user} />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>

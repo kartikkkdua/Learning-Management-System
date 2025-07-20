@@ -21,6 +21,7 @@ import {
   TableHead,
   TableRow
 } from '@mui/material';
+import QuickNotificationWidget from './QuickNotificationWidget';
 import {
   People,
   MenuBook,
@@ -293,6 +294,13 @@ const AdminDashboard = ({ user }) => {
           </List>
         </Paper>
       )}
+
+      {/* Quick Notification Widget */}
+      <Grid container spacing={3} mb={4}>
+        <Grid item xs={12} md={6}>
+          <QuickNotificationWidget user={user} />
+        </Grid>
+      </Grid>
 
       <Grid container spacing={3}>
         {/* Recent Enrollments */}

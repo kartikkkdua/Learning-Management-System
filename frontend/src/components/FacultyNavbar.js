@@ -24,9 +24,11 @@ import {
   Campaign,
   Forum,
   Person,
+  CalendarToday,
   Notifications,
-  CalendarToday
+  Email
 } from '@mui/icons-material';
+import NotificationBell from './NotificationBell';
 
 const FacultyNavbar = ({ user, onLogout }) => {
   const location = useLocation();
@@ -146,9 +148,37 @@ const FacultyNavbar = ({ user, onLogout }) => {
           >
             Announcements
           </Button>
+          
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/create-notification"
+            startIcon={<Notifications />}
+            sx={{ 
+              backgroundColor: isActive('/create-notification') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Send Alert
+          </Button>
+          
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/email"
+            startIcon={<Email />}
+            sx={{ 
+              backgroundColor: isActive('/email') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Email
+          </Button>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <NotificationBell />
+          
           <IconButton 
             color="inherit"
             component={Link}

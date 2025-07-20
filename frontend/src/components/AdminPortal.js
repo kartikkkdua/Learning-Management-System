@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import AdminNavbar from './AdminNavbar';
 import AdminDashboard from './AdminDashboard';
+import UserManagement from './UserManagement';
 import CourseManagement from './CourseManagement';
 import EnrollmentManagement from './EnrollmentManagement';
 import FacultyManagement from './FacultyManagement';
@@ -14,6 +15,12 @@ import AttendanceManagement from './AttendanceManagement';
 import GradingSystem from './GradingSystem';
 import AcademicCalendar from './AcademicCalendar';
 import NotificationCenter from './NotificationCenter';
+import ReportsAnalytics from './ReportsAnalytics';
+import AdvancedAnalytics from './AdvancedAnalytics';
+import NotificationTester from './NotificationTester';
+import CreateNotification from './CreateNotification';
+import EmailDashboard from './EmailDashboard';
+
 
 const adminTheme = createTheme({
   palette: {
@@ -38,6 +45,9 @@ const AdminPortal = ({ user, onLogout }) => {
           <AdminNavbar user={user} onLogout={onLogout} />
           <Routes>
             <Route path="/" element={<AdminDashboard user={user} />} />
+            <Route path="/users" element={<UserManagement user={user} />} />
+            <Route path="/reports" element={<ReportsAnalytics user={user} />} />
+            <Route path="/analytics" element={<AdvancedAnalytics user={user} />} />
             <Route path="/courses" element={<CourseManagement user={user} />} />
             <Route path="/enrollments" element={<EnrollmentManagement user={user} />} />
             <Route path="/faculties" element={<FacultyManagement user={user} />} />
@@ -48,6 +58,9 @@ const AdminPortal = ({ user, onLogout }) => {
             <Route path="/grading" element={<GradingSystem user={user} />} />
             <Route path="/calendar" element={<AcademicCalendar user={user} />} />
             <Route path="/notifications" element={<NotificationCenter user={user} />} />
+            <Route path="/create-notification" element={<CreateNotification user={user} />} />
+            <Route path="/notification-tester" element={<NotificationTester user={user} />} />
+            <Route path="/email" element={<EmailDashboard user={user} />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>

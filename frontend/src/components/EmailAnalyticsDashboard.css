@@ -1,0 +1,522 @@
+.email-analytics-dashboard {
+  padding: 20px;
+}
+
+.analytics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.header-content h2 {
+  margin: 0 0 5px 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.header-content p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.time-range-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Metrics Overview */
+.metrics-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.metric-card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s;
+}
+
+.metric-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.metric-icon {
+  font-size: 32px;
+  opacity: 0.8;
+}
+
+.metric-content {
+  flex: 1;
+}
+
+.metric-number {
+  font-size: 28px;
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 5px;
+}
+
+.metric-label {
+  color: #666;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Charts Section */
+.charts-section {
+  margin-bottom: 40px;
+}
+
+.chart-container {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-container h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.timeline-chart {
+  height: 200px;
+  margin-bottom: 15px;
+}
+
+.timeline-bars {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  gap: 2px;
+  padding: 10px 0;
+}
+
+.timeline-day {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.timeline-bars-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 150px;
+  margin-bottom: 10px;
+}
+
+.timeline-bar {
+  width: 8px;
+  min-height: 2px;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.timeline-bar.sent {
+  background: #007bff;
+}
+
+.timeline-bar.opened {
+  background: #28a745;
+}
+
+.timeline-bar.clicked {
+  background: #ffc107;
+}
+
+.timeline-date {
+  font-size: 10px;
+  color: #666;
+  transform: rotate(-45deg);
+  white-space: nowrap;
+}
+
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 15px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #666;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.legend-color.sent {
+  background: #007bff;
+}
+
+.legend-color.opened {
+  background: #28a745;
+}
+
+.legend-color.clicked {
+  background: #ffc107;
+}
+
+/* Campaign Performance */
+.campaigns-performance {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 40px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.campaigns-performance h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.campaigns-table {
+  overflow-x: auto;
+}
+
+.campaigns-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.campaigns-table th,
+.campaigns-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.campaigns-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.campaigns-table td {
+  font-size: 14px;
+  color: #555;
+}
+
+.campaign-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.rate-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rate-badge.good {
+  background: #d4edda;
+  color: #155724;
+}
+
+.rate-badge.average {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.rate-badge.poor {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Top Performing Emails */
+.top-emails {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 40px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.top-emails h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.top-emails-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.top-email-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+}
+
+.email-rank {
+  font-size: 18px;
+  font-weight: bold;
+  color: #007bff;
+  min-width: 30px;
+}
+
+.email-details {
+  flex: 1;
+}
+
+.email-subject {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.email-stats {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: #666;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Recipient Engagement */
+.recipient-engagement {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.recipient-engagement h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.engagement-table {
+  overflow-x: auto;
+}
+
+.engagement-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.engagement-table th,
+.engagement-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.engagement-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.engagement-table td {
+  font-size: 14px;
+  color: #555;
+}
+
+.recipient-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recipient-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.recipient-email-address {
+  font-size: 12px;
+  color: #666;
+}
+
+.engagement-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .analytics-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-controls {
+    justify-content: space-between;
+  }
+  
+  .metrics-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .metric-card {
+    padding: 15px;
+  }
+  
+  .metric-number {
+    font-size: 24px;
+  }
+  
+  .timeline-date {
+    display: none;
+  }
+  
+  .chart-legend {
+    flex-wrap: wrap;
+  }
+  
+  .campaigns-table,
+  .engagement-table {
+    font-size: 12px;
+  }
+  
+  .campaigns-table th,
+  .campaigns-table td,
+  .engagement-table th,
+  .engagement-table td {
+    padding: 8px;
+  }
+  
+  .top-email-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .email-stats {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .metrics-overview {
+    grid-template-columns: 1fr;
+  }
+  
+  .export-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .export-buttons .btn {
+    width: 100%;
+  }
+}
