@@ -22,10 +22,21 @@ router.get('/course/:courseId', async (req, res) => {
     const assignments = await Assignment.find({ course: req.params.courseId })
       .populate('course', 'courseCode title')
       .populate('instructor', 'profile.firstName profile.lastName')
-      .populate('submissions.student', 'firstName lastName studentId')
+      .populate({
+        path: 'submissions.student',
+        select: 'firstName lastName studentId email user',
+        populate: {
+          path: 'user',
+          select: 'username profile email'
+        }
+      })
       .sort({ dueDate: -1 });
+    
+    // Assignments fetched with submissions
+    
     res.json(assignments);
   } catch (error) {
+    console.error('Error fetching assignments by course:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -36,13 +47,24 @@ router.get('/:id', async (req, res) => {
     const assignment = await Assignment.findById(req.params.id)
       .populate('course', 'courseCode title')
       .populate('instructor', 'profile.firstName profile.lastName')
-      .populate('submissions.student', 'firstName lastName studentId email');
+      .populate({
+        path: 'submissions.student',
+        select: 'firstName lastName studentId email user',
+        populate: {
+          path: 'user',
+          select: 'username profile email'
+        }
+      });
     
     if (!assignment) {
       return res.status(404).json({ message: 'Assignment not found' });
     }
+    
+    // Assignment fetched with submissions
+    
     res.json(assignment);
   } catch (error) {
+    console.error('Error fetching assignment by ID:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -90,9 +112,39 @@ router.post('/:id/submit', async (req, res) => {
       return res.status(404).json({ message: 'Assignment not found' });
     }
 
+    // Find the actual student document ID
+    const Student = require('../models/Student');
+    let actualStudentId = studentId;
+    
+    // If studentId looks like a User ID, find the corresponding Student
+    const student = await Student.findById(studentId).catch(() => null);
+    if (!student) {
+      // Try to find student by user ID
+      const studentByUser = await Student.findOne({ user: studentId });
+      if (studentByUser) {
+        actualStudentId = studentByUser._id;
+      } else {
+        // Try to find student by email matching user email
+        const User = require('../models/User');
+        const user = await User.findById(studentId);
+        if (user) {
+          const studentByEmail = await Student.findOne({ email: user.email });
+          if (studentByEmail) {
+            actualStudentId = studentByEmail._id;
+          }
+        }
+      }
+    }
+
+    console.log('Submission attempt:', {
+      originalStudentId: studentId,
+      actualStudentId: actualStudentId,
+      assignmentId: req.params.id
+    });
+
     // Check if student already submitted
     const existingSubmission = assignment.submissions.find(
-      sub => sub.student.toString() === studentId
+      sub => sub.student.toString() === actualStudentId.toString()
     );
 
     const isLate = new Date() > assignment.dueDate;
@@ -102,23 +154,38 @@ router.post('/:id/submit', async (req, res) => {
       existingSubmission.submittedAt = new Date();
       existingSubmission.files = files;
       existingSubmission.isLate = isLate;
+      console.log('Updated existing submission');
     } else {
       // Create new submission
       assignment.submissions.push({
-        student: studentId,
+        student: actualStudentId,
         submittedAt: new Date(),
         files: files,
         isLate: isLate
       });
+      console.log('Created new submission');
     }
 
     await assignment.save();
     
     const updatedAssignment = await Assignment.findById(req.params.id)
-      .populate('submissions.student', 'firstName lastName studentId');
+      .populate({
+        path: 'submissions.student',
+        select: 'firstName lastName studentId email user',
+        populate: {
+          path: 'user',
+          select: 'username profile email'
+        }
+      });
+    
+    console.log('Assignment after submission:', {
+      title: updatedAssignment.title,
+      totalSubmissions: updatedAssignment.submissions.length
+    });
     
     res.json(updatedAssignment);
   } catch (error) {
+    console.error('Error submitting assignment:', error);
     res.status(400).json({ message: error.message });
   }
 });

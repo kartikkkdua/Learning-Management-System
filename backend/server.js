@@ -62,6 +62,10 @@ app.use('/api/email-config', require('./routes/email-config'));
 app.use('/api/email-campaigns', require('./routes/emailCampaigns'));
 app.use('/api/email-templates', require('./routes/emailTemplates'));
 app.use('/api/email-analytics', require('./routes/emailAnalytics'));
+app.use('/api/grading', require('./routes/grading'));
+app.use('/api/rubrics', require('./routes/rubrics'));
+app.use('/api/grade-categories', require('./routes/gradeCategories'));
+app.use('/api/transcripts', require('./routes/transcripts'));
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {

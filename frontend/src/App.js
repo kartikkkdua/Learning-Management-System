@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Login from './components/Login';
-import StudentPortal from './components/StudentPortal';
-import AdminPortal from './components/AdminPortal';
-import FacultyPortal from './components/FacultyPortal';
+import StudentPortal from './components/student/StudentPortal';
+import AdminPortal from './components/admin/AdminPortal';
+import FacultyPortal from './components/faculty/FacultyPortal';
+import MaintenancePage from './components/pages/MaintenancePage'; 
+
 import { NotificationProvider } from './contexts/NotificationContext';
 import { API_URL } from './config/api';
 import axios from 'axios';
@@ -47,6 +49,8 @@ function App() {
       setLoading(false);
     }
   };
+  const isUnderMaintenance =false;
+
 
   const handleLogin = (userData) => {
     setUser(userData);
@@ -57,6 +61,9 @@ function App() {
     localStorage.removeItem('user');
     setUser(null);
   };
+   if (isUnderMaintenance) {
+    return <MaintenancePage />;
+  }
 
   if (loading) {
     return <div>Loading...</div>;

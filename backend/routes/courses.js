@@ -1,17 +1,28 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../middleware/auth');
 const Course = require('../models/Course');
 
 // Get all courses
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
+    console.log('Fetching courses for user:', req.user);
     const courses = await Course.find()
       .populate('faculty', 'name code')
       .populate('instructor', 'profile.firstName profile.lastName')
-      .populate('enrolledStudents', 'firstName lastName studentId')
+      .populate({
+        path: 'enrolledStudents',
+        select: 'firstName lastName studentId email user',
+        populate: {
+          path: 'user',
+          select: 'username profile email'
+        }
+      })
       .sort({ courseCode: 1 });
+    // Courses fetched successfully
     res.json(courses);
   } catch (error) {
+    console.error('Error fetching courses:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -31,19 +42,30 @@ router.get('/faculty/:facultyId', async (req, res) => {
 });
 
 // Get course by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
   try {
     const course = await Course.findById(req.params.id)
       .populate('faculty', 'name code')
       .populate('instructor', 'profile.firstName profile.lastName')
-      .populate('enrolledStudents', 'firstName lastName studentId email')
+      .populate({
+        path: 'enrolledStudents',
+        select: 'firstName lastName studentId email user',
+        populate: {
+          path: 'user',
+          select: 'username profile email'
+        }
+      })
       .populate('prerequisites', 'courseCode title');
     
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
     }
+    
+    // Course fetched with enrolled students
+    
     res.json(course);
   } catch (error) {
+    console.error('Error fetching course by ID:', error);
     res.status(500).json({ message: error.message });
   }
 });
