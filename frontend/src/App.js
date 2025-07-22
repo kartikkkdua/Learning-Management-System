@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import Login from './components/Login';
+import Login from './components/authentication/Login';
+import ResetPassword from './components/authentication/ResetPassword';
 import StudentPortal from './components/student/StudentPortal';
 import AdminPortal from './components/admin/AdminPortal';
 import FacultyPortal from './components/faculty/FacultyPortal';
-import MaintenancePage from './components/pages/MaintenancePage'; 
+import MaintenancePage from './pages/MaintenancePage';
 
 import { NotificationProvider } from './contexts/NotificationContext';
 import { API_URL } from './config/api';
@@ -49,7 +50,7 @@ function App() {
       setLoading(false);
     }
   };
-  const isUnderMaintenance =false;
+  const isUnderMaintenance = false;
 
 
   const handleLogin = (userData) => {
@@ -61,7 +62,7 @@ function App() {
     localStorage.removeItem('user');
     setUser(null);
   };
-   if (isUnderMaintenance) {
+  if (isUnderMaintenance) {
     return <MaintenancePage />;
   }
 
@@ -69,11 +70,18 @@ function App() {
     return <div>Loading...</div>;
   }
 
+  // Check if we're on the reset password page
+  const isResetPasswordPage = window.location.pathname === '/reset-password';
+  
   if (!user) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Login onLogin={handleLogin} />
+        {isResetPasswordPage ? (
+          <ResetPassword />
+        ) : (
+          <Login onLogin={handleLogin} />
+        )}
       </ThemeProvider>
     );
   }

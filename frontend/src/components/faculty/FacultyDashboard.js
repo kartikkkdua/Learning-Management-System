@@ -17,6 +17,7 @@ import {
   Button
 } from '@mui/material';
 import QuickNotificationWidget from '../notification/QuickNotificationWidget';
+import FacultyApprovalStatus from './FacultyApprovalStatus';
 import {
   MenuBook,
   People,
@@ -49,10 +50,15 @@ const FacultyDashboard = ({ user }) => {
 
   const fetchDashboardData = async () => {
     try {
-      const facultyId = user.id || user._id;
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
 
-      // Fetch faculty's courses
-      const coursesRes = await axios.get(`http://localhost:3001/api/courses?instructor=${facultyId}`);
+      // Fetch faculty's courses (now filtered by backend)
+      const coursesRes = await axios.get('http://localhost:3001/api/courses', config);
       const myCourses = coursesRes.data || [];
 
       // Calculate total students across all courses
@@ -60,16 +66,13 @@ const FacultyDashboard = ({ user }) => {
         sum + (course.enrolledStudents?.length || 0), 0
       );
 
-      // Fetch assignments for faculty's courses
-      const courseIds = myCourses.map(course => course._id);
+      // Fetch assignments for faculty's courses (now filtered by backend)
       let pendingAssignments = [];
-      if (courseIds.length > 0) {
-        try {
-          const assignmentsRes = await axios.get(`http://localhost:3001/api/assignments?courses=${courseIds.join(',')}`);
-          pendingAssignments = assignmentsRes.data || [];
-        } catch (error) {
-          console.log('Assignments endpoint not available');
-        }
+      try {
+        const assignmentsRes = await axios.get('http://localhost:3001/api/assignments', config);
+        pendingAssignments = assignmentsRes.data || [];
+      } catch (error) {
+        console.log('Error fetching assignments:', error.message);
       }
 
       // Generate course statistics
@@ -142,6 +145,8 @@ const FacultyDashboard = ({ user }) => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <FacultyApprovalStatus user={user} />
+      
       <Box display="flex" alignItems="center" mb={4}>
         <Avatar
           sx={{

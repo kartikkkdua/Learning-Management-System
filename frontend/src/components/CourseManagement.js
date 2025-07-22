@@ -32,10 +32,13 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 
-const CourseManagement = () => {
+const CourseManagement = ({ user }) => {
   const [courses, setCourses] = useState([]);
   const [faculties, setFaculties] = useState([]);
+  const [availableFaculty, setAvailableFaculty] = useState([]);
   const [open, setOpen] = useState(false);
+  const [assignFacultyOpen, setAssignFacultyOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
   const [formData, setFormData] = useState({
     courseCode: '',

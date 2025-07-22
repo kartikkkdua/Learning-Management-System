@@ -1,24 +1,109 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../middleware/auth');
 const Student = require('../models/Student');
+const Course = require('../models/Course');
 
-// Get all students with faculty info
-router.get('/', async (req, res) => {
+// Get students (Faculty can only see students in their courses)
+router.get('/', auth, async (req, res) => {
   try {
-    const students = await Student.find()
-      .populate('faculty', 'name code')
-      .sort({ lastName: 1, firstName: 1 });
+    let students = [];
+
+    if (req.user.role === 'faculty') {
+      // Get courses taught by this specific faculty user
+      const facultyCourses = await Course.find({ instructor: req.user.userId })
+        .populate('enrolledStudents')
+        .select('enrolledStudents');
+      
+      // Extract unique student IDs from all courses taught by this faculty
+      const studentIds = new Set();
+      facultyCourses.forEach(course => {
+        if (course.enrolledStudents && course.enrolledStudents.length > 0) {
+          course.enrolledStudents.forEach(student => {
+            studentIds.add(student._id.toString());
+          });
+        }
+      });
+
+      if (studentIds.size > 0) {
+        students = await Student.find({ _id: { $in: Array.from(studentIds) } })
+          .populate('faculty', 'name code')
+          .populate('user', 'username email profile')
+          .sort({ lastName: 1, firstName: 1 });
+      }
+      
+      console.log(`Faculty ${req.user.userId} can see ${students.length} students from ${facultyCourses.length} courses`);
+    } else if (req.user.role === 'admin') {
+      // Admin can see all students
+      students = await Student.find()
+        .populate('faculty', 'name code')
+        .populate('user', 'username email profile')
+        .sort({ lastName: 1, firstName: 1 });
+    } else {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can view student information.' 
+      });
+    }
+
     res.json(students);
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get students by course (Faculty can only see students in their courses)
+router.get('/course/:courseId', auth, async (req, res) => {
+  try {
+    // Check if faculty has access to this course
+    if (req.user.role === 'faculty') {
+      const course = await Course.findOne({ 
+        _id: req.params.courseId, 
+        instructor: req.user.userId 
+      });
+      
+      if (!course) {
+        return res.status(403).json({ 
+          message: 'Access denied. You can only view students in courses you teach.' 
+        });
+      }
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can view student information.' 
+      });
+    }
+
+    const course = await Course.findById(req.params.courseId)
+      .populate({
+        path: 'enrolledStudents',
+        populate: {
+          path: 'user',
+          select: 'username email profile'
+        }
+      });
+
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    res.json(course.enrolledStudents);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Get students by faculty
-router.get('/faculty/:facultyId', async (req, res) => {
+// Get students by faculty department (Admin only)
+router.get('/faculty/:facultyId', auth, async (req, res) => {
   try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only administrators can view students by faculty department.' 
+      });
+    }
+
     const students = await Student.find({ faculty: req.params.facultyId })
       .populate('faculty', 'name code')
+      .populate('user', 'username email profile')
       .sort({ lastName: 1, firstName: 1 });
     res.json(students);
   } catch (error) {
@@ -26,13 +111,35 @@ router.get('/faculty/:facultyId', async (req, res) => {
   }
 });
 
-// Get student by ID
-router.get('/:id', async (req, res) => {
+// Get student by ID (Faculty can only see students in their courses)
+router.get('/:id', auth, async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id).populate('faculty');
+    const student = await Student.findById(req.params.id)
+      .populate('faculty')
+      .populate('user', 'username email profile');
+    
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }
+
+    // Check if faculty has access to this student
+    if (req.user.role === 'faculty') {
+      const facultyCourses = await Course.find({ 
+        instructor: req.user.userId,
+        enrolledStudents: student._id
+      });
+      
+      if (facultyCourses.length === 0) {
+        return res.status(403).json({ 
+          message: 'Access denied. You can only view students enrolled in your courses.' 
+        });
+      }
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can view student information.' 
+      });
+    }
+
     res.json(student);
   } catch (error) {
     res.status(500).json({ message: error.message });

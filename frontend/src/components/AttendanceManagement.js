@@ -24,32 +24,34 @@ import {
   Grid,
   Card,
   CardContent,
-  RadioGroup,
+  Divider,
+  Alert,
+  Switch,
   FormControlLabel,
-  Radio,
-  Divider
+  Tooltip,
+  IconButton,
+  Snackbar
 } from '@mui/material';
 import {
-  Add,
+  LocationOn,
+  Timer,
   CheckCircle,
   Cancel,
   Schedule,
   Person,
-  Analytics
+  Analytics,
+  AutoMode,
+  Refresh,
+  Settings
 } from '@mui/icons-material';
 import axios from 'axios';
-
-const AttendanceManagement = () => {
+const AttendanceManagement = ({ user }) => {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [courses, setCourses] = useState([]);
   const [students, setStudents] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [attendanceData, setAttendanceData] = useState([]);
   const [statsOpen, setStatsOpen] = useState(false);
   const [studentStats, setStudentStats] = useState([]);
-
+  
   useEffect(() => {
     fetchAttendanceRecords();
     fetchCourses();
@@ -58,7 +60,14 @@ const AttendanceManagement = () => {
 
   const fetchAttendanceRecords = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/attendance');
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+      
+      const response = await axios.get('http://localhost:3001/api/attendance', config);
       setAttendanceRecords(response.data);
     } catch (error) {
       console.error('Error fetching attendance records:', error);
@@ -67,7 +76,14 @@ const AttendanceManagement = () => {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/courses');
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+      
+      const response = await axios.get('http://localhost:3001/api/courses', config);
       setCourses(response.data);
     } catch (error) {
       console.error('Error fetching courses:', error);

@@ -1,24 +1,51 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../middleware/auth');
 const Assignment = require('../models/Assignment');
+const Course = require('../models/Course');
 
-// Get all assignments
-router.get('/', async (req, res) => {
+// Get all assignments (filtered by user role)
+router.get('/', auth, async (req, res) => {
   try {
-    const assignments = await Assignment.find()
+    let query = {};
+    
+    // If user is faculty, only show assignments for courses they teach
+    if (req.user.role === 'faculty') {
+      query.instructor = req.user.userId;
+    }
+    // Admin can see all assignments
+    // Students will see assignments for courses they're enrolled in (handled separately)
+    
+    const assignments = await Assignment.find(query)
       .populate('course', 'courseCode title')
       .populate('instructor', 'profile.firstName profile.lastName')
       .populate('submissions.student', 'firstName lastName studentId')
       .sort({ dueDate: -1 });
+    
+    console.log(`Found ${assignments.length} assignments for ${req.user.role} user`);
     res.json(assignments);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Get assignments by course
-router.get('/course/:courseId', async (req, res) => {
+// Get assignments by course (with access control)
+router.get('/course/:courseId', auth, async (req, res) => {
   try {
+    // Check if faculty has access to this course
+    if (req.user.role === 'faculty') {
+      const course = await Course.findOne({ 
+        _id: req.params.courseId, 
+        instructor: req.user.userId 
+      });
+      
+      if (!course) {
+        return res.status(403).json({ 
+          message: 'Access denied. You do not have access to this course.' 
+        });
+      }
+    }
+    
     const assignments = await Assignment.find({ course: req.params.courseId })
       .populate('course', 'courseCode title')
       .populate('instructor', 'profile.firstName profile.lastName')
@@ -32,8 +59,7 @@ router.get('/course/:courseId', async (req, res) => {
       })
       .sort({ dueDate: -1 });
     
-    // Assignments fetched with submissions
-    
+    console.log(`Found ${assignments.length} assignments for course ${req.params.courseId}`);
     res.json(assignments);
   } catch (error) {
     console.error('Error fetching assignments by course:', error);
@@ -69,33 +95,75 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create new assignment
-router.post('/', async (req, res) => {
+// Create new assignment (Faculty can create for their courses, Admin can create for any course)
+router.post('/', auth, async (req, res) => {
   try {
+    const { course: courseId } = req.body;
+    
+    // Check if faculty has access to create assignments for this course
+    if (req.user.role === 'faculty') {
+      const course = await Course.findOne({ 
+        _id: courseId, 
+        instructor: req.user.userId 
+      });
+      
+      if (!course) {
+        return res.status(403).json({ 
+          message: 'Access denied. You can only create assignments for courses you teach.' 
+        });
+      }
+      
+      // Set the instructor to the current faculty user
+      req.body.instructor = req.user.userId;
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can create assignments.' 
+      });
+    }
+    
     const assignment = new Assignment(req.body);
     const savedAssignment = await assignment.save();
     const populatedAssignment = await Assignment.findById(savedAssignment._id)
       .populate('course', 'courseCode title')
       .populate('instructor', 'profile.firstName profile.lastName');
+    
+    console.log(`Assignment "${populatedAssignment.title}" created by ${req.user.role} ${req.user.userId}`);
     res.status(201).json(populatedAssignment);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
 
-// Update assignment
-router.put('/:id', async (req, res) => {
+// Update assignment (Faculty can update their assignments, Admin can update any)
+router.put('/:id', auth, async (req, res) => {
   try {
-    const assignment = await Assignment.findByIdAndUpdate(
-      req.params.id,
+    let query = { _id: req.params.id };
+    
+    // If user is faculty, ensure they can only update assignments they created
+    if (req.user.role === 'faculty') {
+      query.instructor = req.user.userId;
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can update assignments.' 
+      });
+    }
+    
+    const assignment = await Assignment.findOneAndUpdate(
+      query,
       req.body,
       { new: true, runValidators: true }
     ).populate('course', 'courseCode title')
      .populate('instructor', 'profile.firstName profile.lastName');
     
     if (!assignment) {
-      return res.status(404).json({ message: 'Assignment not found' });
+      return res.status(404).json({ 
+        message: req.user.role === 'faculty' 
+          ? 'Assignment not found or you do not have permission to update it' 
+          : 'Assignment not found' 
+      });
     }
+    
+    console.log(`Assignment "${assignment.title}" updated by ${req.user.role} ${req.user.userId}`);
     res.json(assignment);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -190,14 +258,30 @@ router.post('/:id/submit', async (req, res) => {
   }
 });
 
-// Grade assignment submission
-router.post('/:id/grade', async (req, res) => {
+// Grade assignment submission (Faculty can grade their assignments, Admin can grade any)
+router.post('/:id/grade', auth, async (req, res) => {
   try {
     const { studentId, grade, feedback } = req.body;
-    const assignment = await Assignment.findById(req.params.id);
+    
+    let query = { _id: req.params.id };
+    
+    // If user is faculty, ensure they can only grade assignments they created
+    if (req.user.role === 'faculty') {
+      query.instructor = req.user.userId;
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can grade assignments.' 
+      });
+    }
+    
+    const assignment = await Assignment.findOne(query);
     
     if (!assignment) {
-      return res.status(404).json({ message: 'Assignment not found' });
+      return res.status(404).json({ 
+        message: req.user.role === 'faculty' 
+          ? 'Assignment not found or you do not have permission to grade it' 
+          : 'Assignment not found' 
+      });
     }
 
     const submission = assignment.submissions.find(
@@ -210,24 +294,43 @@ router.post('/:id/grade', async (req, res) => {
 
     submission.grade = grade;
     submission.feedback = feedback;
+    submission.gradedAt = new Date();
     await assignment.save();
 
     const updatedAssignment = await Assignment.findById(req.params.id)
       .populate('submissions.student', 'firstName lastName studentId');
     
+    console.log(`Assignment submission graded by ${req.user.role} ${req.user.userId}`);
     res.json(updatedAssignment);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
 
-// Delete assignment
-router.delete('/:id', async (req, res) => {
+// Delete assignment (Faculty can delete their assignments, Admin can delete any)
+router.delete('/:id', auth, async (req, res) => {
   try {
-    const assignment = await Assignment.findByIdAndDelete(req.params.id);
-    if (!assignment) {
-      return res.status(404).json({ message: 'Assignment not found' });
+    let query = { _id: req.params.id };
+    
+    // If user is faculty, ensure they can only delete assignments they created
+    if (req.user.role === 'faculty') {
+      query.instructor = req.user.userId;
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can delete assignments.' 
+      });
     }
+    
+    const assignment = await Assignment.findOneAndDelete(query);
+    if (!assignment) {
+      return res.status(404).json({ 
+        message: req.user.role === 'faculty' 
+          ? 'Assignment not found or you do not have permission to delete it' 
+          : 'Assignment not found' 
+      });
+    }
+    
+    console.log(`Assignment "${assignment.title}" deleted by ${req.user.role} ${req.user.userId}`);
     res.json({ message: 'Assignment deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

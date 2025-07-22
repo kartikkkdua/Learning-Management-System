@@ -138,6 +138,19 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
+            to="/faculty-approval"
+            startIcon={<PersonAdd />}
+            sx={{ 
+              backgroundColor: isActive('/faculty-approval') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Faculty Approval
+          </Button>
+          
+          <Button 
+            color="inherit" 
+            component={Link} 
             to="/reports"
             startIcon={<Assessment />}
             sx={{ 

@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+const { authenticateToken } = require('./middleware/auth');
 require('dotenv').config();
 
 const app = express();
@@ -45,6 +46,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lms');
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', authenticateToken, require('./routes/admin'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/faculties', require('./routes/faculties'));
 app.use('/api/students', require('./routes/students'));

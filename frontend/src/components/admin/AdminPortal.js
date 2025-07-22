@@ -8,6 +8,7 @@ import UserManagement from '../UserManagement';
 import CourseManagement from '../CourseManagement';
 import EnrollmentManagement from '../EnrollmentManagement';
 import FacultyManagement from '../faculty/FacultyManagement';
+import FacultyApproval from './FacultyApproval';
 import StudentManagement from '../student/StudentManagement';
 import AssignmentManagement from '../AssignmentManagement';
 import AnnouncementManagement from '../AnnouncementManagement';
@@ -51,6 +52,7 @@ const AdminPortal = ({ user, onLogout }) => {
             <Route path="/courses" element={<CourseManagement user={user} />} />
             <Route path="/enrollments" element={<EnrollmentManagement user={user} />} />
             <Route path="/faculties" element={<FacultyManagement user={user} />} />
+            <Route path="/faculty-approval" element={<FacultyApproval user={user} />} />
             <Route path="/students" element={<StudentManagement user={user} />} />
             <Route path="/assignments" element={<AssignmentManagement user={user} />} />
             <Route path="/announcements" element={<AnnouncementManagement user={user} />} />
