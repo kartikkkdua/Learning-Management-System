@@ -33,51 +33,59 @@ import axios from 'axios';
 
 const StudentManagement = () => {
   const [students, setStudents] = useState([]);
-  const [faculties, setFaculties] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [open, setOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
-  const [filterFaculty, setFilterFaculty] = useState('');
   const [formData, setFormData] = useState({
     studentId: '',
     firstName: '',
     lastName: '',
     email: '',
-    faculty: '',
     year: 1,
     status: 'active'
   });
 
   useEffect(() => {
     fetchStudents();
-    fetchFaculties();
   }, []);
 
   useEffect(() => {
-    if (filterFaculty) {
-      setFilteredStudents(students.filter(student => student.faculty && student.faculty._id === filterFaculty));
-    } else {
-      setFilteredStudents(students);
-    }
-  }, [students, filterFaculty]);
+    setFilteredStudents(students);
+  }, [students]);
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/students');
-      setStudents(response.data);
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { 'Authorization': `Bearer ${token}` }
+      };
+      const response = await axios.get('http://localhost:3001/api/admin/students', config);
+      setStudents(response.data.data || []);
     } catch (error) {
       console.error('Error fetching students:', error);
+      setStudents([]);
     }
   };
 
-  const fetchFaculties = async () => {
+  const syncStudentUsers = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/faculties');
-      setFaculties(response.data);
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { 'Authorization': `Bearer ${token}` }
+      };
+      const response = await axios.post('http://localhost:3001/api/admin/students/sync-users', {}, config);
+      
+      if (response.data.success) {
+        alert(`Sync completed: ${response.data.data.created} created, ${response.data.data.updated} updated`);
+        fetchStudents(); // Refresh the list
+      }
     } catch (error) {
-      console.error('Error fetching faculties:', error);
+      console.error('Error syncing student users:', error);
+      alert('Error syncing student users: ' + (error.response?.data?.message || error.message));
     }
   };
+
+
 
   const handleSubmit = async () => {
     try {
@@ -111,7 +119,6 @@ const StudentManagement = () => {
       firstName: student.firstName,
       lastName: student.lastName,
       email: student.email,
-      faculty: student.faculty ? student.faculty._id : '',
       year: student.year,
       status: student.status
     });
@@ -126,7 +133,6 @@ const StudentManagement = () => {
       firstName: '',
       lastName: '',
       email: '',
-      faculty: '',
       year: 1,
       status: 'active'
     });
@@ -147,34 +153,24 @@ const StudentManagement = () => {
         <Typography variant="h4" gutterBottom>
           Student Management
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => setOpen(true)}
-        >
-          Add Student
-        </Button>
+        <Box display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            onClick={syncStudentUsers}
+          >
+            Sync Student Users
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => setOpen(true)}
+          >
+            Add Student
+          </Button>
+        </Box>
       </Box>
 
-      <Grid container spacing={2} mb={3}>
-        <Grid item xs={12} md={4}>
-          <FormControl fullWidth>
-            <InputLabel>Filter by Faculty</InputLabel>
-            <Select
-              value={filterFaculty}
-              label="Filter by Faculty"
-              onChange={(e) => setFilterFaculty(e.target.value)}
-            >
-              <MenuItem value="">All Faculties</MenuItem>
-              {faculties.map((faculty) => (
-                <MenuItem key={faculty._id} value={faculty._id}>
-                  {faculty.name} ({faculty.code})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
+
 
       <TableContainer component={Paper}>
         <Table>
@@ -183,7 +179,6 @@ const StudentManagement = () => {
               <TableCell>Student ID</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
-              <TableCell>Faculty</TableCell>
               <TableCell>Year</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Enrolled</TableCell>
@@ -198,21 +193,6 @@ const StudentManagement = () => {
                 </TableCell>
                 <TableCell>{`${student.firstName} ${student.lastName}`}</TableCell>
                 <TableCell>{student.email}</TableCell>
-                <TableCell>
-                  {student.faculty ? (
-                    <Chip
-                      label={`${student.faculty.name} (${student.faculty.code})`}
-                      color="primary"
-                      size="small"
-                    />
-                  ) : (
-                    <Chip
-                      label="No Faculty Assigned"
-                      color="default"
-                      size="small"
-                    />
-                  )}
-                </TableCell>
                 <TableCell>Year {student.year}</TableCell>
                 <TableCell>
                   <Chip
@@ -286,22 +266,7 @@ const StudentManagement = () => {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </Grid>
-            <Grid item xs={12}>
-              <FormControl fullWidth margin="dense">
-                <InputLabel>Faculty</InputLabel>
-                <Select
-                  value={formData.faculty}
-                  label="Faculty"
-                  onChange={(e) => setFormData({ ...formData, faculty: e.target.value })}
-                >
-                  {faculties.map((faculty) => (
-                    <MenuItem key={faculty._id} value={faculty._id}>
-                      {faculty.name} ({faculty.code})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+
             <Grid item xs={6}>
               <FormControl fullWidth margin="dense">
                 <InputLabel>Year</InputLabel>

@@ -63,13 +63,8 @@ router.post('/register', async (req, res) => {
           await defaultFaculty.save();
         }
 
-        // Generate employeeId manually to avoid validation issues
-        const facultyCount = await FacultyMember.countDocuments();
-        const employeeId = `FAC${String(facultyCount + 1).padStart(4, '0')}`;
-        
         const facultyMember = new FacultyMember({
           user: user._id,
-          employeeId: employeeId,
           department: defaultFaculty._id,
           position: 'Instructor',
           status: 'pending', // Requires admin approval
@@ -157,23 +152,6 @@ router.post('/login', async (req, res) => {
 
     // Reset login attempts on successful password validation
     await user.resetLoginAttempts();
-
-    // Check faculty profile exists (but allow login even if pending)
-    if (user.role === 'faculty') {
-      const FacultyMember = require('../models/FacultyMember');
-      const facultyMember = await FacultyMember.findOne({ user: user._id });
-      
-      if (!facultyMember) {
-        return res.status(403).json({
-          success: false,
-          message: 'Faculty profile not found. Please contact an administrator.'
-        });
-      }
-      
-      // Add faculty approval status to user object for frontend
-      user.facultyStatus = facultyMember.status;
-      user.facultyApproved = facultyMember.isApproved;
-    }
 
     // Check if 2FA is enabled
     if (user.twoFactorEnabled && user.twoFactorMethod === 'email') {
@@ -320,27 +298,6 @@ router.post('/verify-2fa', async (req, res) => {
         success: false,
         message: validation.reason === 'Invalid code' ? 'Invalid verification code' : validation.reason
       });
-    }
-
-    // Check faculty approval status for faculty users (before completing login)
-    if (user.role === 'faculty') {
-      const FacultyMember = require('../models/FacultyMember');
-      const facultyMember = await FacultyMember.findOne({ user: user._id });
-      
-      if (!facultyMember) {
-        return res.status(403).json({
-          success: false,
-          message: 'Faculty profile not found. Please contact an administrator.'
-        });
-      }
-
-      if (!facultyMember.isApproved || facultyMember.status !== 'approved') {
-        return res.status(403).json({
-          success: false,
-          message: 'Your faculty account is pending approval. Please contact an administrator.',
-          pendingApproval: true
-        });
-      }
     }
 
     // Clear 2FA code and complete login
@@ -652,24 +609,543 @@ router.post('/change-password', authenticateToken, async (req, res) => {
   }
 });
 
-// Get users endpoint (for compatibility)
-router.get('/users', authenticateToken, async (req, res) => {
+// Verify 2FA code (Step 2: Complete login with 2FA)
+router.post('/verify-2fa', async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({
+    const { tempToken, code } = req.body;
+
+    if (!tempToken || !code) {
+      return res.status(400).json({
         success: false,
-        message: 'Admin access required'
+        message: 'Temporary token and verification code are required'
       });
     }
-    
-    const users = await User.find().select('-password').sort({ createdAt: -1 });
-    res.json(users);
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message
+
+    // Verify temporary token
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, process.env.JWT_SECRET || 'fallback_secret');
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired temporary token'
+      });
+    }
+
+    if (decoded.step !== '2fa_pending') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token type'
+      });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Validate 2FA code
+    const validation = user.validate2FACode(code);
+    if (!validation.valid) {
+      await user.save(); // Save attempt count
+      return res.status(400).json({
+        success: false,
+        message: `Invalid verification code: ${validation.reason}`
+      });
+    }
+
+    // Clear 2FA code and complete login
+    user.clear2FACode();
+    user.lastLogin = new Date();
+    await user.save();
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        profile: user.profile,
+        twoFactorEnabled: user.twoFactorEnabled
+      }
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Resend 2FA code
+router.post('/resend-2fa', async (req, res) => {
+  try {
+    const { tempToken } = req.body;
+
+    if (!tempToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Temporary token is required'
+      });
+    }
+
+    // Verify temporary token
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, process.env.JWT_SECRET || 'fallback_secret');
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired temporary token'
+      });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Generate new 2FA code
+    const code = user.generate2FACode();
+    await user.save();
+
+    // Send new code via email
+    const emailResult = await emailService.send2FACode(user, code);
+
+    if (!emailResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send verification code'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'New verification code sent to your email'
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Enable/Disable 2FA
+router.post('/toggle-2fa', authenticateToken, async (req, res) => {
+  try {
+    const { enable, method = 'email' } = req.body;
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (enable) {
+      user.twoFactorEnabled = true;
+      user.twoFactorMethod = method;
+    } else {
+      user.twoFactorEnabled = false;
+      user.twoFactorMethod = 'none';
+      user.clear2FACode();
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `2FA ${enable ? 'enabled' : 'disabled'} successfully`,
+      twoFactorEnabled: user.twoFactorEnabled,
+      twoFactorMethod: user.twoFactorMethod
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+
+// Reset Password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reset token and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long'
+      });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset token'
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    // Reset login attempts and unlock account
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Change Password (for logged-in users)
+router.post('/change-password', authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long'
+      });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Verify 2FA code (Step 2: Complete login with 2FA)
+router.post('/verify-2fa', async (req, res) => {
+  try {
+    const { tempToken, code } = req.body;
+
+    if (!tempToken || !code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Temporary token and verification code are required'
+      });
+    }
+
+    // Verify temporary token
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, process.env.JWT_SECRET || 'fallback_secret');
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired temporary token'
+      });
+    }
+
+    if (decoded.step !== '2fa_pending') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token type'
+      });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Validate 2FA code
+    const validation = user.validate2FACode(code);
+    if (!validation.valid) {
+      await user.save(); // Save attempt count
+      return res.status(400).json({
+        success: false,
+        message: `Invalid verification code: ${validation.reason}`
+      });
+    }
+
+    // Clear 2FA code and complete login
+    user.clear2FACode();
+    user.lastLogin = new Date();
+    await user.save();
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        profile: user.profile,
+        twoFactorEnabled: user.twoFactorEnabled
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Resend 2FA code
+router.post('/resend-2fa', async (req, res) => {
+  try {
+    const { tempToken } = req.body;
+
+    if (!tempToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Temporary token is required'
+      });
+    }
+
+    // Verify temporary token
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, process.env.JWT_SECRET || 'fallback_secret');
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired temporary token'
+      });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Generate new 2FA code
+    const code = user.generate2FACode();
+    await user.save();
+
+    // Send new code via email
+    const emailResult = await emailService.send2FACode(user, code);
+
+    if (!emailResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send verification code'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'New verification code sent to your email'
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Enable/Disable 2FA
+router.post('/toggle-2fa', authenticateToken, async (req, res) => {
+  try {
+    const { enable, method = 'email' } = req.body;
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    if (enable) {
+      user.twoFactorEnabled = true;
+      user.twoFactorMethod = method;
+    } else {
+      user.twoFactorEnabled = false;
+      user.twoFactorMethod = 'none';
+      user.clear2FACode();
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `2FA ${enable ? 'enabled' : 'disabled'} successfully`,
+      twoFactorEnabled: user.twoFactorEnabled,
+      twoFactorMethod: user.twoFactorMethod
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+
+// Reset Password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reset token and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long'
+      });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset token'
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    // Reset login attempts and unlock account
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+
+    await user.save();
+
+    // Send confirmation email
+    await emailService.sendPasswordChangeConfirmation(user);
+
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Change Password (for logged-in users)
+router.post('/change-password', authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long'
+      });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    // Send confirmation email
+    await emailService.sendPasswordChangeConfirmation(user);
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 

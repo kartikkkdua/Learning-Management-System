@@ -24,12 +24,11 @@ const courseSchema = new mongoose.Schema({
   },
   faculty: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Faculty',
-    required: true
+    ref: 'FacultyMember'
   },
   instructor: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'FacultyMember'
   },
   semester: {
     type: String,

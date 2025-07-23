@@ -4,23 +4,27 @@ const auth = require('../middleware/auth');
 const { requireAdminOrApprovedFaculty } = require('../middleware/facultyAuth');
 const Course = require('../models/Course');
 
-// Get all courses (filtered by user role)
-router.get('/', auth, requireAdminOrApprovedFaculty, async (req, res) => {
+// Get all courses (public access for basic listing)
+router.get('/', async (req, res) => {
   try {
-    console.log('Fetching courses for user:', req.user);
-    
-    let query = {};
-    
-    // If user is faculty, only show courses they are assigned to teach
-    if (req.user.role === 'faculty') {
-      query.instructor = req.user.userId;
-    }
-    // Admin can see all courses
-    // Students will see courses they're enrolled in (handled separately)
+    // Public access - show all active courses
+    let query = { isActive: true };
     
     const courses = await Course.find(query)
-      .populate('faculty', 'name code')
-      .populate('instructor', 'profile.firstName profile.lastName')
+      .populate({
+        path: 'faculty',
+        populate: {
+          path: 'user',
+          select: 'profile username email'
+        }
+      })
+      .populate({
+        path: 'instructor',
+        populate: {
+          path: 'user',
+          select: 'profile username email'
+        }
+      })
       .populate({
         path: 'enrolledStudents',
         select: 'firstName lastName studentId email user',
@@ -31,7 +35,7 @@ router.get('/', auth, requireAdminOrApprovedFaculty, async (req, res) => {
       })
       .sort({ courseCode: 1 });
     
-    console.log(`Found ${courses.length} courses for ${req.user.role} user`);
+    console.log(`Found ${courses.length} active courses`);
     res.json(courses);
   } catch (error) {
     console.error('Error fetching courses:', error);
@@ -39,12 +43,65 @@ router.get('/', auth, requireAdminOrApprovedFaculty, async (req, res) => {
   }
 });
 
-// Get courses by faculty
+// Get courses for authenticated faculty member
+router.get('/my-courses', auth, requireAdminOrApprovedFaculty, async (req, res) => {
+  try {
+    if (req.user.role !== 'faculty') {
+      return res.status(403).json({ message: 'Access denied. Faculty access required.' });
+    }
+
+    // Find the faculty member record for this user
+    const FacultyMember = require('../models/FacultyMember');
+    const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+    
+    if (!facultyMember) {
+      return res.status(404).json({ message: 'Faculty member record not found' });
+    }
+
+    const courses = await Course.find({ instructor: facultyMember._id })
+      .populate({
+        path: 'faculty',
+        populate: {
+          path: 'user',
+          select: 'profile username email'
+        }
+      })
+      .populate({
+        path: 'instructor',
+        populate: {
+          path: 'user',
+          select: 'profile username email'
+        }
+      })
+      .populate('enrolledStudents', 'firstName lastName studentId')
+      .sort({ courseCode: 1 });
+    
+    console.log(`Found ${courses.length} courses for faculty member ${req.user.userId}`);
+    res.json(courses);
+  } catch (error) {
+    console.error('Error fetching faculty courses:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get courses by faculty member ID
 router.get('/faculty/:facultyId', async (req, res) => {
   try {
     const courses = await Course.find({ faculty: req.params.facultyId })
-      .populate('faculty', 'name code')
-      .populate('instructor', 'profile.firstName profile.lastName')
+      .populate({
+        path: 'faculty',
+        populate: {
+          path: 'user',
+          select: 'profile username email'
+        }
+      })
+      .populate({
+        path: 'instructor',
+        populate: {
+          path: 'user',
+          select: 'profile username email'
+        }
+      })
       .populate('enrolledStudents', 'firstName lastName studentId')
       .sort({ courseCode: 1 });
     res.json(courses);
@@ -64,8 +121,20 @@ router.get('/:id', auth, async (req, res) => {
     }
     
     const course = await Course.findOne(query)
-      .populate('faculty', 'name code')
-      .populate('instructor', 'profile.firstName profile.lastName')
+      .populate({
+        path: 'faculty',
+        populate: {
+          path: 'user',
+          select: 'profile username email'
+        }
+      })
+      .populate({
+        path: 'instructor',
+        populate: {
+          path: 'user',
+          select: 'profile username email'
+        }
+      })
       .populate({
         path: 'enrolledStudents',
         select: 'firstName lastName studentId email user',
@@ -105,8 +174,20 @@ router.post('/', auth, async (req, res) => {
     const course = new Course(req.body);
     const savedCourse = await course.save();
     const populatedCourse = await Course.findById(savedCourse._id)
-      .populate('faculty', 'name code')
-      .populate('instructor', 'profile.firstName profile.lastName');
+      .populate({
+        path: 'faculty',
+        populate: {
+          path: 'user',
+          select: 'profile username email'
+        }
+      })
+      .populate({
+        path: 'instructor',
+        populate: {
+          path: 'user',
+          select: 'profile username email'
+        }
+      });
     
     console.log(`Course ${populatedCourse.courseCode} created by admin ${req.user.userId}`);
     res.status(201).json(populatedCourse);
@@ -129,8 +210,19 @@ router.put('/:id', auth, async (req, res) => {
       req.params.id,
       req.body,
       { new: true, runValidators: true }
-    ).populate('faculty', 'name code')
-     .populate('instructor', 'profile.firstName profile.lastName');
+    ).populate({
+      path: 'faculty',
+      populate: {
+        path: 'user',
+        select: 'profile username email'
+      }
+    }).populate({
+      path: 'instructor',
+      populate: {
+        path: 'user',
+        select: 'profile username email'
+      }
+    });
     
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
@@ -159,30 +251,41 @@ router.post('/:id/assign-faculty', auth, async (req, res) => {
       return res.status(400).json({ message: 'Instructor ID is required' });
     }
 
-    // Verify the instructor exists and has faculty role
-    const User = require('../models/User');
-    const instructor = await User.findById(instructorId);
+    // Verify the instructor exists and is an approved faculty member
+    const FacultyMember = require('../models/FacultyMember');
+    const instructor = await FacultyMember.findById(instructorId).populate('user');
     
     if (!instructor) {
-      return res.status(404).json({ message: 'Instructor not found' });
+      return res.status(404).json({ message: 'Faculty member not found' });
     }
     
-    if (instructor.role !== 'faculty') {
-      return res.status(400).json({ message: 'User must have faculty role to be assigned as instructor' });
+    if (instructor.status !== 'approved') {
+      return res.status(400).json({ message: 'Faculty member must be approved to be assigned as instructor' });
     }
 
     const course = await Course.findByIdAndUpdate(
       req.params.id,
       { instructor: instructorId },
       { new: true, runValidators: true }
-    ).populate('faculty', 'name code')
-     .populate('instructor', 'profile.firstName profile.lastName');
+    ).populate({
+      path: 'faculty',
+      populate: {
+        path: 'user',
+        select: 'profile username email'
+      }
+    }).populate({
+      path: 'instructor',
+      populate: {
+        path: 'user',
+        select: 'profile username email'
+      }
+    });
     
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
     }
     
-    console.log(`Course ${course.courseCode} assigned to faculty ${instructor.username} by admin ${req.user.userId}`);
+    console.log(`Course ${course.courseCode} assigned to faculty ${instructor.user.username} by admin ${req.user.userId}`);
     res.json({
       message: 'Course assigned to faculty successfully',
       course
@@ -206,7 +309,13 @@ router.post('/:id/unassign-faculty', auth, async (req, res) => {
       req.params.id,
       { $unset: { instructor: 1 } },
       { new: true }
-    ).populate('faculty', 'name code');
+    ).populate({
+      path: 'faculty',
+      populate: {
+        path: 'user',
+        select: 'profile username email'
+      }
+    });
     
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
@@ -308,10 +417,10 @@ router.get('/admin/available-faculty', auth, async (req, res) => {
       });
     }
 
-    const User = require('../models/User');
-    const faculty = await User.find({ role: 'faculty', isActive: true })
-      .select('username email profile')
-      .sort({ 'profile.firstName': 1 });
+    const FacultyMember = require('../models/FacultyMember');
+    const faculty = await FacultyMember.find({ status: 'approved', isActive: true })
+      .populate('user', 'username email profile')
+      .sort({ 'user.profile.firstName': 1 });
     
     res.json(faculty);
   } catch (error) {

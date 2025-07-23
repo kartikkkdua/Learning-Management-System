@@ -70,7 +70,14 @@ const TwoFactorAuth = ({ tempToken, onSuccess, onCancel }) => {
       if (data.success) {
         onSuccess(data);
       } else {
-        setError(data.message || 'Invalid verification code');
+        const errorMessage = data.message || 'Invalid verification code';
+        const isPendingApproval = data.pendingApproval;
+        
+        if (isPendingApproval) {
+          setError(`${errorMessage} Your account will be activated once an administrator approves your faculty application.`);
+        } else {
+          setError(errorMessage);
+        }
       }
     } catch (error) {
       setError('Network error. Please try again.');

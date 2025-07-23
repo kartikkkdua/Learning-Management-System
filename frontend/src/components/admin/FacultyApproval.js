@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -54,12 +54,26 @@ const FacultyApproval = () => {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
+      console.log('Token:', token ? 'Present' : 'Missing');
+
       const config = {
         headers: { 'Authorization': `Bearer ${token}` }
       };
+
+      console.log('Fetching faculty data...');
+
+      // Sync faculty users with FacultyMember records on first load
+      try {
+        const syncRes = await axios.post('http://localhost:3001/api/admin/faculty/sync-users', {}, config);
+        if (syncRes.data.data.created > 0) {
+          showSnackbar(`Synced ${syncRes.data.data.created} faculty records`, 'success');
+        }
+      } catch (syncError) {
+        console.error('Sync failed:', syncError.response?.data || syncError.message);
+      }
 
       const [pendingRes, allRes, statsRes] = await Promise.all([
         axios.get('http://localhost:3001/api/admin/faculty/pending', config),
@@ -67,34 +81,61 @@ const FacultyApproval = () => {
         axios.get('http://localhost:3001/api/admin/stats', config)
       ]);
 
-      setPendingFaculty(pendingRes.data.data);
-      setAllFaculty(allRes.data.data);
-      setStats(statsRes.data.data);
+      // Faculty data loaded successfully
+
+      setPendingFaculty(pendingRes.data.data || []);
+      setAllFaculty(allRes.data.data || []);
+      setStats(statsRes.data.data || {});
     } catch (error) {
       console.error('Error fetching data:', error);
-      showSnackbar('Error fetching data', 'error');
+      console.error('Error details:', error.response?.data || error.message);
+      showSnackbar(`Error fetching data: ${error.response?.data?.message || error.message}`, 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const showSnackbar = (message, severity = 'info') => {
+  const showSnackbar = useCallback((message, severity = 'info') => {
     setSnackbar({ open: true, message, severity });
-  };
+  }, []);
 
-  const handleApprove = async () => {
+  const syncFacultyUsers = async () => {
     try {
       const token = localStorage.getItem('token');
       const config = {
         headers: { 'Authorization': `Bearer ${token}` }
       };
+      
+      showSnackbar('Syncing faculty users...', 'info');
+      const response = await axios.post('http://localhost:3001/api/admin/faculty/sync-users', {}, config);
+      
+      if (response.data.success) {
+        showSnackbar(`Sync completed: ${response.data.data.created} created, ${response.data.data.updated} updated`, 'success');
+        fetchData(); // Refresh the data
+      }
+    } catch (error) {
+      console.error('Error syncing faculty users:', error);
+      showSnackbar('Error syncing faculty users: ' + (error.response?.data?.message || error.message), 'error');
+    }
+  };
 
-      await axios.post(
+  const handleApprove = async () => {
+    try {
+      console.log('Approving faculty member:', selectedFaculty);
+      console.log('Selected position:', selectedPosition);
+      
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { 'Authorization': `Bearer ${token}` }
+      };
+
+      const response = await axios.post(
         `http://localhost:3001/api/admin/faculty/${selectedFaculty._id}/approve`,
         { position: selectedPosition },
         config
       );
 
+      console.log('Approval response:', response.data);
       showSnackbar('Faculty member approved successfully', 'success');
       setApprovalDialog(false);
       setSelectedFaculty(null);
@@ -102,7 +143,18 @@ const FacultyApproval = () => {
       fetchData();
     } catch (error) {
       console.error('Error approving faculty:', error);
-      showSnackbar('Error approving faculty member', 'error');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Full error:', JSON.stringify(error.response?.data, null, 2));
+      
+      let errorMessage = 'Unknown error occurred';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      showSnackbar(`Error approving faculty member: ${errorMessage}`, 'error');
     }
   };
 
@@ -149,13 +201,21 @@ const FacultyApproval = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Faculty Management
-      </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4">
+          Faculty Management
+        </Typography>
+        <Button
+          variant="outlined"
+          onClick={syncFacultyUsers}
+        >
+          Sync Faculty Users
+        </Button>
+      </Box>
 
       {/* Statistics Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center">
@@ -168,7 +228,7 @@ const FacultyApproval = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center">
@@ -181,7 +241,7 @@ const FacultyApproval = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center">
@@ -194,7 +254,7 @@ const FacultyApproval = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center">
@@ -221,7 +281,7 @@ const FacultyApproval = () => {
             </Alert>
             <Grid container spacing={2}>
               {pendingFaculty.map((faculty) => (
-                <Grid item xs={12} md={6} key={faculty._id}>
+                <Grid size={{ xs: 12, md: 6 }} key={faculty._id}>
                   <Card variant="outlined">
                     <CardContent>
                       <Box display="flex" alignItems="center" mb={2}>
@@ -237,23 +297,23 @@ const FacultyApproval = () => {
                           </Typography>
                         </Box>
                       </Box>
-                      
+
                       <Box display="flex" alignItems="center" mb={1}>
                         <Email sx={{ mr: 1, fontSize: 16 }} />
                         <Typography variant="body2">{faculty.user.email}</Typography>
                       </Box>
-                      
+
                       <Box display="flex" alignItems="center" mb={2}>
                         <School sx={{ mr: 1, fontSize: 16 }} />
                         <Typography variant="body2">
                           {faculty.department?.name} ({faculty.position})
                         </Typography>
                       </Box>
-                      
+
                       <Typography variant="caption" color="textSecondary" display="block" mb={2}>
                         Applied: {new Date(faculty.createdAt).toLocaleDateString()}
                       </Typography>
-                      
+
                       <Box display="flex" gap={1}>
                         <Button
                           variant="contained"

@@ -39,11 +39,23 @@ const UserManagement = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editDialog, setEditDialog] = useState(false);
+  const [addDialog, setAddDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editForm, setEditForm] = useState({
     username: '',
     email: '',
     role: '',
+    profile: {
+      firstName: '',
+      lastName: '',
+      phone: ''
+    }
+  });
+  const [addForm, setAddForm] = useState({
+    username: '',
+    email: '',
+    password: '',
+    role: 'student',
     profile: {
       firstName: '',
       lastName: '',
@@ -99,6 +111,21 @@ const UserManagement = ({ user }) => {
     setEditDialog(true);
   };
 
+  const handleAdd = () => {
+    setAddForm({
+      username: '',
+      email: '',
+      password: '',
+      role: 'student',
+      profile: {
+        firstName: '',
+        lastName: '',
+        phone: ''
+      }
+    });
+    setAddDialog(true);
+  };
+
   const handleSave = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -113,6 +140,23 @@ const UserManagement = ({ user }) => {
     } catch (error) {
       setError(`Failed to update user: ${error.response?.data?.message || error.message}`);
       console.error('Error updating user:', error);
+    }
+  };
+
+  const handleCreate = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:3001/api/users', addForm, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setAddDialog(false);
+      fetchUsers();
+      setError('');
+    } catch (error) {
+      setError(`Failed to create user: ${error.response?.data?.message || error.message}`);
+      console.error('Error creating user:', error);
     }
   };
 

@@ -1,12 +1,26 @@
 const express = require('express');
 const router = express.Router();
 const Faculty = require('../models/Faculty');
+const FacultyMember = require('../models/FacultyMember');
 
-// Get all faculties
+// Get all faculty departments
 router.get('/', async (req, res) => {
   try {
     const faculties = await Faculty.find().sort({ name: 1 });
     res.json(faculties);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get all approved faculty members (for course assignment, etc.)
+router.get('/members', async (req, res) => {
+  try {
+    const facultyMembers = await FacultyMember.find({ status: 'approved' })
+      .populate('user', 'username email profile')
+      .populate('department', 'name code')
+      .sort({ 'user.profile.firstName': 1 });
+    res.json(facultyMembers);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

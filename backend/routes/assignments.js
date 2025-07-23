@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const { requireAdminOrApprovedFaculty } = require('../middleware/facultyAuth');
 const Assignment = require('../models/Assignment');
 const Course = require('../models/Course');
 
 // Get all assignments (filtered by user role)
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, requireAdminOrApprovedFaculty, async (req, res) => {
   try {
     let query = {};
     
@@ -30,7 +31,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get assignments by course (with access control)
-router.get('/course/:courseId', auth, async (req, res) => {
+router.get('/course/:courseId', auth, requireAdminOrApprovedFaculty, async (req, res) => {
   try {
     // Check if faculty has access to this course
     if (req.user.role === 'faculty') {

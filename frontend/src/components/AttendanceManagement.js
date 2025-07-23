@@ -16,243 +16,148 @@ import {
   DialogActions,
   TextField,
   Box,
-  Chip,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
   Grid,
   Card,
-  CardContent,
-  Divider,
-  Alert,
-  Switch,
-  FormControlLabel,
-  Tooltip,
-  IconButton,
-  Snackbar
+  CardContent
 } from '@mui/material';
-import {
-  LocationOn,
-  Timer,
-  CheckCircle,
-  Cancel,
-  Schedule,
-  Person,
-  Analytics,
-  AutoMode,
-  Refresh,
-  Settings
-} from '@mui/icons-material';
 import axios from 'axios';
-const AttendanceManagement = ({ user }) => {
-  const [attendanceRecords, setAttendanceRecords] = useState([]);
-  const [courses, setCourses] = useState([]);
+
+const AttendanceManagement = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [students, setStudents] = useState([]);
-  const [statsOpen, setStatsOpen] = useState(false);
-  const [studentStats, setStudentStats] = useState([]);
-  
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState('');
+  const [selectedSection, setSelectedSection] = useState('');
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [courseOptions, setCourseOptions] = useState([]);
+  const [sectionOptions, setSectionOptions] = useState([]);
+
   useEffect(() => {
-    fetchAttendanceRecords();
-    fetchCourses();
-    fetchStudents();
+    // Fetch course and section options
+    axios.get('/api/courses').then((res) => setCourseOptions(res.data));
+    axios.get('/api/sections').then((res) => setSectionOptions(res.data));
   }, []);
 
-  const fetchAttendanceRecords = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-      
-      const response = await axios.get('http://localhost:3001/api/attendance', config);
-      setAttendanceRecords(response.data);
-    } catch (error) {
-      console.error('Error fetching attendance records:', error);
+  useEffect(() => {
+    if (selectedCourse && selectedSection) {
+      axios
+        .get(`/api/students?course=${selectedCourse}&section=${selectedSection}`)
+        .then((res) => setStudents(res.data));
     }
-  };
-
-  const fetchCourses = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-      
-      const response = await axios.get('http://localhost:3001/api/courses', config);
-      setCourses(response.data);
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-    }
-  };
-
-  const fetchStudents = async () => {
-    try {
-      const response = await axios.get('http://localhost:3001/api/students');
-      setStudents(response.data);
-    } catch (error) {
-      console.error('Error fetching students:', error);
-    }
-  };
+  }, [selectedCourse, selectedSection]);
 
   const handleMarkAttendance = () => {
-    if (!selectedCourse) {
-      alert('Please select a course');
-      return;
-    }
-
-    const course = courses.find(c => c._id === selectedCourse);
-    const enrolledStudents = course?.enrolledStudents || [];
-    
-    const initialAttendance = enrolledStudents.map(student => ({
-      student: student._id,
-      studentName: `${student.firstName} ${student.lastName}`,
+    const defaultAttendance = students.map((student) => ({
+      student: student.id,
+      studentName: student.name,
       studentId: student.studentId,
       status: 'present',
-      notes: ''
+      notes: '',
     }));
-
-    setAttendanceData(initialAttendance);
-    setOpen(true);
-  };
-
-  const handleSubmitAttendance = async () => {
-    try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      const attendancePayload = {
-        course: selectedCourse,
-        date: selectedDate,
-        records: attendanceData.map(record => ({
-          student: record.student,
-          status: record.status,
-          notes: record.notes
-        })),
-        markedBy: user.id || user._id
-      };
-
-      await axios.post('http://localhost:3001/api/attendance', attendancePayload);
-      fetchAttendanceRecords();
-      setOpen(false);
-      setAttendanceData([]);
-    } catch (error) {
-      console.error('Error saving attendance:', error);
-    }
+    setAttendanceData(defaultAttendance);
+    setIsDialogOpen(true);
   };
 
   const updateAttendanceStatus = (studentId, status) => {
-    setAttendanceData(prev => 
-      prev.map(record => 
-        record.student === studentId 
-          ? { ...record, status }
-          : record
+    setAttendanceData((prev) =>
+      prev.map((record) =>
+        record.student === studentId ? { ...record, status } : record
       )
     );
   };
 
   const updateAttendanceNotes = (studentId, notes) => {
-    setAttendanceData(prev => 
-      prev.map(record => 
-        record.student === studentId 
-          ? { ...record, notes }
-          : record
+    setAttendanceData((prev) =>
+      prev.map((record) =>
+        record.student === studentId ? { ...record, notes } : record
       )
     );
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'present': return 'success';
-      case 'absent': return 'error';
-      case 'late': return 'warning';
-      case 'excused': return 'info';
-      default: return 'default';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'present': return <CheckCircle />;
-      case 'absent': return <Cancel />;
-      case 'late': return <Schedule />;
-      case 'excused': return <Person />;
-      default: return null;
-    }
-  };
-
-  const fetchStudentStats = async () => {
-    try {
-      const statsPromises = students.map(async (student) => {
-        const response = await axios.get(`http://localhost:3001/api/attendance/student/${student._id}/stats`);
-        return {
-          student: student,
-          stats: response.data
-        };
+  const handleSubmitAttendance = () => {
+    axios
+      .post('/api/attendance', {
+        date: selectedDate,
+        course: selectedCourse,
+        section: selectedSection,
+        records: attendanceData,
+      })
+      .then(() => {
+        alert('Attendance submitted!');
+        setIsDialogOpen(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('Error submitting attendance');
       });
-      
-      const stats = await Promise.all(statsPromises);
-      setStudentStats(stats);
-      setStatsOpen(true);
-    } catch (error) {
-      console.error('Error fetching student stats:', error);
-    }
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" gutterBottom>
-          Attendance Management
-        </Typography>
-        <Box display="flex" gap={2}>
-          <Button
-            variant="outlined"
-            startIcon={<Analytics />}
-            onClick={fetchStudentStats}
-          >
-            View Statistics
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={handleMarkAttendance}
-          >
-            Mark Attendance
-          </Button>
-        </Box>
-      </Box>
+    <Container>
+      <Typography variant="h4" gutterBottom>
+        Attendance Management
+      </Typography>
 
-      <Grid container spacing={2} mb={3}>
-        <Grid item xs={12} md={6}>
+      <Grid container spacing={2} marginBottom={2}>
+        <Grid item xs={12} md={3}>
+          <TextField
+            type="date"
+            fullWidth
+            label="Date"
+            InputLabelProps={{ shrink: true }}
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+          />
+        </Grid>
+        <Grid item xs={12} md={3}>
           <FormControl fullWidth>
-            <InputLabel>Select Course</InputLabel>
+            <InputLabel>Course</InputLabel>
             <Select
               value={selectedCourse}
-              label="Select Course"
               onChange={(e) => setSelectedCourse(e.target.value)}
+              label="Course"
             >
-              {courses.map((course) => (
-                <MenuItem key={course._id} value={course._id}>
-                  {course.courseCode} - {course.title}
+              {courseOptions.map((course) => (
+                <MenuItem key={course} value={course}>
+                  {course}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
+        <Grid item xs={12} md={3}>
+          <FormControl fullWidth>
+            <InputLabel>Section</InputLabel>
+            <Select
+              value={selectedSection}
+              onChange={(e) => setSelectedSection(e.target.value)}
+              label="Section"
+            >
+              {sectionOptions.map((section) => (
+                <MenuItem key={section} value={section}>
+                  {section}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={3} display="flex" alignItems="center">
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleMarkAttendance}
             fullWidth
-            label="Date"
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            slotProps={{
-              inputLabel: { shrink: true }
-            }}
-          />
+            disabled={!selectedDate || !selectedCourse || !selectedSection}
+          >
+            Mark Attendance
+          </Button>
         </Grid>
       </Grid>
 
@@ -260,206 +165,57 @@ const AttendanceManagement = ({ user }) => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Date</TableCell>
-              <TableCell>Course</TableCell>
-              <TableCell>Present</TableCell>
-              <TableCell>Absent</TableCell>
-              <TableCell>Late</TableCell>
-              <TableCell>Excused</TableCell>
-              <TableCell>Total Students</TableCell>
-              <TableCell>Marked By</TableCell>
+              <TableCell>Student Name</TableCell>
+              <TableCell>Student ID</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Notes</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {attendanceRecords.map((record) => {
-              const present = record.records.filter(r => r.status === 'present').length;
-              const absent = record.records.filter(r => r.status === 'absent').length;
-              const late = record.records.filter(r => r.status === 'late').length;
-              const excused = record.records.filter(r => r.status === 'excused').length;
-              
-              return (
-                <TableRow key={record._id}>
-                  <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    {record.course ? (
-                      <Chip 
-                        label={record.course.courseCode} 
-                        color="primary" 
-                        size="small" 
-                      />
-                    ) : (
-                      <Chip 
-                        label="No Course Assigned" 
-                        color="default" 
-                        size="small" 
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={present} 
-                      color="success" 
-                      size="small" 
-                      icon={<CheckCircle />}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={absent} 
-                      color="error" 
-                      size="small" 
-                      icon={<Cancel />}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={late} 
-                      color="warning" 
-                      size="small" 
-                      icon={<Schedule />}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={excused} 
-                      color="info" 
-                      size="small" 
-                    />
-                  </TableCell>
-                  <TableCell>{record.records.length}</TableCell>
-                  <TableCell>
-                    {record.markedBy?.profile?.firstName} {record.markedBy?.profile?.lastName}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {attendanceData.map((record) => (
+              <TableRow key={record.student}>
+                <TableCell>{record.studentName}</TableCell>
+                <TableCell>{record.studentId}</TableCell>
+                <TableCell>{record.status}</TableCell>
+                <TableCell>{record.notes}</TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
 
-      {/* Mark Attendance Dialog */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>
-          Mark Attendance - {courses.find(c => c._id === selectedCourse)?.courseCode} ({selectedDate})
-        </DialogTitle>
+      {/* Dialog inserted here */}
+      <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Mark Attendance</DialogTitle>
         <DialogContent>
-          <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-            {attendanceData.map((record, index) => (
-              <Card key={record.student} sx={{ mb: 2 }}>
-                <CardContent>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} md={4}>
-                      <Typography variant="h6">
-                        {record.studentName}
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        ID: {record.studentId}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} md={5}>
-                      <FormControl component="fieldset">
-                        <RadioGroup
-                          row
-                          value={record.status}
-                          onChange={(e) => updateAttendanceStatus(record.student, e.target.value)}
-                        >
-                          <FormControlLabel 
-                            value="present" 
-                            control={<Radio color="success" />} 
-                            label="Present" 
-                          />
-                          <FormControlLabel 
-                            value="absent" 
-                            control={<Radio color="error" />} 
-                            label="Absent" 
-                          />
-                          <FormControlLabel 
-                            value="late" 
-                            control={<Radio color="warning" />} 
-                            label="Late" 
-                          />
-                          <FormControlLabel 
-                            value="excused" 
-                            control={<Radio color="info" />} 
-                            label="Excused" 
-                          />
-                        </RadioGroup>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} md={3}>
-                      <TextField
-                        size="small"
-                        label="Notes"
-                        value={record.notes}
-                        onChange={(e) => updateAttendanceNotes(record.student, e.target.value)}
-                        fullWidth
-                      />
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
+          {attendanceData.map((record) => (
+            <Box key={record.student} display="flex" alignItems="center" mb={2}>
+              <Typography sx={{ width: '25%' }}>
+                {record.studentName} ({record.studentId})
+              </Typography>
+              <RadioGroup
+                row
+                value={record.status}
+                onChange={(e) => updateAttendanceStatus(record.student, e.target.value)}
+              >
+                <FormControlLabel value="present" control={<Radio />} label="Present" />
+                <FormControlLabel value="absent" control={<Radio />} label="Absent" />
+                <FormControlLabel value="late" control={<Radio />} label="Late" />
+                <FormControlLabel value="excused" control={<Radio />} label="Excused" />
+              </RadioGroup>
+              <TextField
+                label="Notes"
+                size="small"
+                sx={{ ml: 2 }}
+                value={record.notes}
+                onChange={(e) => updateAttendanceNotes(record.student, e.target.value)}
+              />
+            </Box>
+          ))}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleSubmitAttendance} variant="contained">
-            Save Attendance
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Statistics Dialog */}
-      <Dialog open={statsOpen} onClose={() => setStatsOpen(false)} maxWidth="lg" fullWidth>
-        <DialogTitle>Attendance Statistics</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2}>
-            {studentStats.map((studentStat) => (
-              <Grid item xs={12} md={6} lg={4} key={studentStat.student._id}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {studentStat.student.firstName} {studentStat.student.lastName}
-                    </Typography>
-                    <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
-                      ID: {studentStat.student.studentId}
-                    </Typography>
-                    <Divider sx={{ my: 1 }} />
-                    {studentStat.stats.map((courseStat) => (
-                      <Box key={courseStat._id} mb={2}>
-                        <Typography variant="subtitle2">
-                          {courseStat.course ? courseStat.course.courseCode : 'Unknown Course'}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          Attendance: {courseStat.attendancePercentage.toFixed(1)}%
-                        </Typography>
-                        <Box display="flex" gap={1} mt={1}>
-                          <Chip 
-                            label={`P: ${courseStat.present}`} 
-                            color="success" 
-                            size="small" 
-                          />
-                          <Chip 
-                            label={`A: ${courseStat.absent}`} 
-                            color="error" 
-                            size="small" 
-                          />
-                          <Chip 
-                            label={`L: ${courseStat.late}`} 
-                            color="warning" 
-                            size="small" 
-                          />
-                        </Box>
-                      </Box>
-                    ))}
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setStatsOpen(false)}>Close</Button>
+          <Button onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleSubmitAttendance}>Submit</Button>
         </DialogActions>
       </Dialog>
     </Container>

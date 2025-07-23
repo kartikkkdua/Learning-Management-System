@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
-  Button,
   Table,
   TableBody,
   TableCell,
@@ -10,216 +9,110 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  IconButton,
   Box,
   Chip
 } from '@mui/material';
-import {
-  Add,
-  Edit,
-  Delete
-} from '@mui/icons-material';
 import axios from 'axios';
 
 const FacultyManagement = () => {
-  const [faculties, setFaculties] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [editingFaculty, setEditingFaculty] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    description: '',
-    dean: '',
-    established: ''
-  });
+  const [facultyMembers, setFacultyMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchFaculties();
+    fetchData();
   }, []);
 
-  const fetchFaculties = async () => {
+  const fetchData = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/faculties');
-      setFaculties(response.data);
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { 'Authorization': `Bearer ${token}` }
+      };
+
+      // Fetch faculty members
+      const membersRes = await axios.get('http://localhost:3001/api/admin/faculty', config);
+      setFacultyMembers(membersRes.data.data || []);
     } catch (error) {
-      console.error('Error fetching faculties:', error);
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = async () => {
-    try {
-      if (editingFaculty) {
-        await axios.put(`http://localhost:3001/api/faculties/${editingFaculty._id}`, formData);
-      } else {
-        await axios.post('http://localhost:3001/api/faculties', formData);
-      }
-      fetchFaculties();
-      handleClose();
-    } catch (error) {
-      console.error('Error saving faculty:', error);
-    }
-  };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this faculty?')) {
-      try {
-        await axios.delete(`http://localhost:3001/api/faculties/${id}`);
-        fetchFaculties();
-      } catch (error) {
-        console.error('Error deleting faculty:', error);
-      }
-    }
-  };
 
-  const handleEdit = (faculty) => {
-    setEditingFaculty(faculty);
-    setFormData({
-      name: faculty.name,
-      code: faculty.code,
-      description: faculty.description || '',
-      dean: faculty.dean || '',
-      established: faculty.established ? faculty.established.split('T')[0] : ''
-    });
-    setOpen(true);
-  };
 
-  const handleClose = () => {
-    setOpen(false);
-    setEditingFaculty(null);
-    setFormData({
-      name: '',
-      code: '',
-      description: '',
-      dean: '',
-      established: ''
-    });
-  };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" gutterBottom>
-          Faculty Management
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => setOpen(true)}
-        >
-          Add Faculty
-        </Button>
-      </Box>
+      <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
+        Faculty Management
+      </Typography>
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Code</TableCell>
+              <TableCell>Employee ID</TableCell>
               <TableCell>Name</TableCell>
-              <TableCell>Dean</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Established</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Department</TableCell>
+              <TableCell>Position</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Join Date</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {faculties.map((faculty) => (
-              <TableRow key={faculty._id}>
-                <TableCell>
-                  <Chip label={faculty.code} color="primary" size="small" />
-                </TableCell>
-                <TableCell>{faculty.name}</TableCell>
-                <TableCell>{faculty.dean || 'N/A'}</TableCell>
-                <TableCell>{faculty.description || 'N/A'}</TableCell>
-                <TableCell>
-                  {faculty.established 
-                    ? new Date(faculty.established).getFullYear()
-                    : 'N/A'
-                  }
-                </TableCell>
-                <TableCell>
-                  <IconButton onClick={() => handleEdit(faculty)} color="primary">
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(faculty._id)} color="error">
-                    <Delete />
-                  </IconButton>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  Loading faculty members...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : facultyMembers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  No faculty members found
+                </TableCell>
+              </TableRow>
+            ) : (
+              facultyMembers.map((faculty) => (
+                <TableRow key={faculty._id}>
+                  <TableCell>
+                    <Chip label={faculty.employeeId} color="primary" size="small" />
+                  </TableCell>
+                  <TableCell>
+                    {faculty.user?.profile?.firstName} {faculty.user?.profile?.lastName}
+                    <br />
+                    <Typography variant="caption" color="textSecondary">
+                      @{faculty.user?.username}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{faculty.user?.email}</TableCell>
+                  <TableCell>{faculty.department?.name || 'N/A'}</TableCell>
+                  <TableCell>{faculty.position}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={faculty.status}
+                      color={
+                        faculty.status === 'approved' ? 'success' :
+                          faculty.status === 'pending' ? 'warning' : 'error'
+                      }
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {faculty.joinDate
+                      ? new Date(faculty.joinDate).toLocaleDateString()
+                      : 'N/A'
+                    }
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
-
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingFaculty ? 'Edit Faculty' : 'Add New Faculty'}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Faculty Name"
-            fullWidth
-            variant="outlined"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            label="Faculty Code"
-            fullWidth
-            variant="outlined"
-            value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            label="Dean"
-            fullWidth
-            variant="outlined"
-            value={formData.dean}
-            onChange={(e) => setFormData({ ...formData, dean: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            label="Description"
-            fullWidth
-            multiline
-            rows={3}
-            variant="outlined"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            label="Established Date"
-            type="date"
-            fullWidth
-            variant="outlined"
-            slotProps={{
-              inputLabel: { shrink: true }
-            }}
-            value={formData.established}
-            onChange={(e) => setFormData({ ...formData, established: e.target.value })}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            {editingFaculty ? 'Update' : 'Add'}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Container>
   );
 };

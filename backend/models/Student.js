@@ -30,7 +30,7 @@ const studentSchema = new mongoose.Schema({
   faculty: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Faculty',
-    required: true
+    required: false // Made optional since students are not assigned to faculty
   },
   enrollmentDate: {
     type: Date,

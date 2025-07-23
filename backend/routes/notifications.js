@@ -244,4 +244,69 @@ router.get('/user/:userId/stats', async (req, res) => {
   }
 });
 
+// Get notification stats for a user
+router.get('/user/:userId/stats', auth, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    
+    const [unreadCount, totalCount] = await Promise.all([
+      Notification.countDocuments({ recipient: userId, isRead: false }),
+      Notification.countDocuments({ recipient: userId })
+    ]);
+    
+    res.json({
+      success: true,
+      data: {
+        unreadCount,
+        totalCount,
+        readCount: totalCount - unreadCount
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching notification stats:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Get general notification stats (admin only)
+router.get('/stats', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+    
+    const [totalNotifications, unreadNotifications, todayNotifications] = await Promise.all([
+      Notification.countDocuments(),
+      Notification.countDocuments({ isRead: false }),
+      Notification.countDocuments({
+        createdAt: {
+          $gte: new Date(new Date().setHours(0, 0, 0, 0))
+        }
+      })
+    ]);
+    
+    res.json({
+      success: true,
+      data: {
+        totalNotifications,
+        unreadNotifications,
+        readNotifications: totalNotifications - unreadNotifications,
+        todayNotifications
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching notification stats:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;

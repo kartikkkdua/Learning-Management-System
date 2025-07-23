@@ -73,10 +73,11 @@ const CourseManagement = ({ user }) => {
 
   const fetchFaculties = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/faculties');
-      setFaculties(response.data);
+      const response = await axios.get('http://localhost:3001/api/faculties/members');
+      setFaculties(response.data || []);
     } catch (error) {
       console.error('Error fetching faculties:', error);
+      setFaculties([]);
     }
   };
 
@@ -195,7 +196,7 @@ const CourseManagement = ({ user }) => {
                 <TableCell>
                   {course.faculty ? (
                     <Chip 
-                      label={`${course.faculty.name} (${course.faculty.code})`} 
+                      label={`${course.faculty.user?.profile?.firstName || ''} ${course.faculty.user?.profile?.lastName || ''} (${course.faculty.employeeId})`} 
                       color="secondary" 
                       size="small" 
                     />
@@ -311,7 +312,7 @@ const CourseManagement = ({ user }) => {
                 >
                   {faculties.map((faculty) => (
                     <MenuItem key={faculty._id} value={faculty._id}>
-                      {faculty.name} ({faculty.code})
+                      {faculty.user?.profile?.firstName} {faculty.user?.profile?.lastName} ({faculty.employeeId})
                     </MenuItem>
                   ))}
                 </Select>

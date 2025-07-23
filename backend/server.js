@@ -42,7 +42,14 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lms');
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lms')
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+  })
+  .catch((error) => {
+    console.error('❌ MongoDB connection error:', error.message);
+    console.log('💡 Make sure MongoDB is running or check your connection string');
+  });
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));

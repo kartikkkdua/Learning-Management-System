@@ -13,25 +13,16 @@ import {
   ListItemIcon,
   Chip,
   LinearProgress,
-  Avatar,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow
+  Avatar
 } from '@mui/material';
 import QuickNotificationWidget from '../notification/QuickNotificationWidget';
 import {
   People,
   MenuBook,
   PersonAdd,
-  School,
   TrendingUp,
   Warning,
   CheckCircle,
-  Schedule,
-  Assessment,
   Notifications,
   Group,
   SupervisorAccount
@@ -390,16 +381,16 @@ const AdminDashboard = ({ user }) => {
                   <ListItemText
                     primary={`${user.profile?.firstName || ''} ${user.profile?.lastName || ''} (${user.username})`}
                     secondary={
-                      <Box display="flex" alignItems="center" gap={1}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Chip 
                           label={user.role.toUpperCase()}
                           size="small"
                           color={user.role === 'admin' ? 'error' : user.role === 'faculty' ? 'primary' : 'default'}
                         />
-                        <Typography variant="caption" color="textSecondary">
+                        <Typography variant="caption" color="textSecondary" component="span">
                           {new Date(user.createdAt).toLocaleDateString()}
                         </Typography>
-                      </Box>
+                      </span>
                     }
                   />
                 </ListItem>

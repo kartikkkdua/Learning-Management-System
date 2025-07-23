@@ -80,7 +80,14 @@ const Login = ({ onLogin }) => {
       localStorage.setItem('user', JSON.stringify(response.data.user));
       onLogin(response.data.user);
     } catch (error) {
-      setError(error.response?.data?.message || 'Login failed');
+      const errorMessage = error.response?.data?.message || 'Login failed';
+      const isPendingApproval = error.response?.data?.pendingApproval;
+      
+      if (isPendingApproval) {
+        setError(`${errorMessage} Your account will be activated once an administrator approves your faculty application.`);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
