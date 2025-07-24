@@ -12,8 +12,16 @@ router.get('/', auth, async (req, res) => {
 
     // If user is faculty, only show attendance for courses they teach
     if (req.user.role === 'faculty') {
-      // Get courses taught by this faculty
-      const facultyCourses = await Course.find({ instructor: req.user.userId }).select('_id');
+      // Find faculty member record
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(403).json({ message: 'Faculty member record not found' });
+      }
+      
+      // Get courses taught by this faculty member
+      const facultyCourses = await Course.find({ instructor: facultyMember._id }).select('_id');
       const courseIds = facultyCourses.map(c => c._id);
       
       if (courseIds.length === 0) {
@@ -26,9 +34,16 @@ router.get('/', auth, async (req, res) => {
     if (course) {
       // If specific course requested, check faculty access
       if (req.user.role === 'faculty') {
+        const FacultyMember = require('../models/FacultyMember');
+        const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+        
+        if (!facultyMember) {
+          return res.status(403).json({ message: 'Faculty member record not found' });
+        }
+        
         const courseAccess = await Course.findOne({ 
           _id: course, 
-          instructor: req.user.userId 
+          instructor: facultyMember._id 
         });
         
         if (!courseAccess) {
@@ -61,9 +76,16 @@ router.get('/course/:courseId', auth, async (req, res) => {
   try {
     // Check if faculty has access to this course
     if (req.user.role === 'faculty') {
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(403).json({ message: 'Faculty member record not found' });
+      }
+      
       const course = await Course.findOne({ 
         _id: req.params.courseId, 
-        instructor: req.user.userId 
+        instructor: facultyMember._id 
       });
       
       if (!course) {
@@ -103,9 +125,16 @@ router.post('/', auth, async (req, res) => {
 
     // Check if faculty has access to mark attendance for this course
     if (req.user.role === 'faculty') {
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(403).json({ message: 'Faculty member record not found' });
+      }
+      
       const courseAccess = await Course.findOne({ 
         _id: course, 
-        instructor: req.user.userId 
+        instructor: facultyMember._id 
       });
       
       if (!courseAccess) {

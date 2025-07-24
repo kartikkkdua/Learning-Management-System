@@ -57,8 +57,8 @@ const FacultyDashboard = ({ user }) => {
         }
       };
 
-      // Fetch faculty's courses (now filtered by backend)
-      const coursesRes = await axios.get('http://localhost:3001/api/courses', config);
+      // Fetch faculty's courses (filtered by backend for this faculty member)
+      const coursesRes = await axios.get('http://localhost:3001/api/courses/my-courses', config);
       const myCourses = coursesRes.data || [];
 
       // Calculate total students across all courses

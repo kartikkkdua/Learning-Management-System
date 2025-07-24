@@ -245,6 +245,18 @@ router.post('/login', async (req, res) => {
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select('-password');
+    
+    // Add faculty status if user is faculty
+    if (user.role === 'faculty') {
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: user._id });
+      
+      if (facultyMember) {
+        user.facultyStatus = facultyMember.status;
+        user.facultyApproved = facultyMember.isApproved;
+      }
+    }
+    
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -361,7 +373,9 @@ router.post('/verify-2fa', async (req, res) => {
         email: user.email,
         role: user.role,
         profile: user.profile,
-        twoFactorEnabled: user.twoFactorEnabled
+        twoFactorEnabled: user.twoFactorEnabled,
+        facultyStatus: user.facultyStatus,
+        facultyApproved: user.facultyApproved
       }
     });
   } catch (error) {

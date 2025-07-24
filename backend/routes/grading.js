@@ -32,6 +32,31 @@ router.get('/course/:courseId', auth, async (req, res) => {
   try {
     const { courseId } = req.params;
     
+    // Check if faculty has access to this course
+    if (req.user.role === 'faculty') {
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(404).json({ message: 'Faculty member record not found' });
+      }
+
+      const course = await Course.findOne({ 
+        _id: courseId, 
+        instructor: facultyMember._id 
+      });
+      
+      if (!course) {
+        return res.status(403).json({ 
+          message: 'Access denied. You can only view grades for courses you teach.' 
+        });
+      }
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can view grades.' 
+      });
+    }
+    
     const grades = await Grade.find({ course: courseId })
       .populate('student', 'user')
       .populate('assignment', 'title dueDate')
@@ -110,7 +135,26 @@ router.post('/', auth, async (req, res) => {
       return res.status(404).json({ message: 'Assignment not found' });
     }
     
-    // Student and assignment validation passed
+    // Check if faculty has access to this course/assignment
+    if (req.user.role === 'faculty') {
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(404).json({ message: 'Faculty member record not found' });
+      }
+
+      // Check if the assignment belongs to a course taught by this faculty member
+      if (assignment.instructor.toString() !== facultyMember._id.toString()) {
+        return res.status(403).json({ 
+          message: 'Access denied. You can only grade assignments for courses you teach.' 
+        });
+      }
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can create grades.' 
+      });
+    }
 
     // Check if grade already exists
     let grade = await Grade.findOne({
@@ -212,6 +256,31 @@ router.get('/stats/course/:courseId', auth, async (req, res) => {
   try {
     const { courseId } = req.params;
 
+    // Check if faculty has access to this course
+    if (req.user.role === 'faculty') {
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(404).json({ message: 'Faculty member record not found' });
+      }
+
+      const course = await Course.findOne({ 
+        _id: courseId, 
+        instructor: facultyMember._id 
+      });
+      
+      if (!course) {
+        return res.status(403).json({ 
+          message: 'Access denied. You can only view statistics for courses you teach.' 
+        });
+      }
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can view grade statistics.' 
+      });
+    }
+
     const stats = await Grade.aggregate([
       { $match: { course: mongoose.Types.ObjectId(courseId), status: 'published' } },
       {
@@ -262,6 +331,31 @@ router.get('/stats/course/:courseId', auth, async (req, res) => {
 router.get('/final/:courseId', auth, async (req, res) => {
   try {
     const { courseId } = req.params;
+
+    // Check if faculty has access to this course
+    if (req.user.role === 'faculty') {
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(404).json({ message: 'Faculty member record not found' });
+      }
+
+      const course = await Course.findOne({ 
+        _id: courseId, 
+        instructor: facultyMember._id 
+      });
+      
+      if (!course) {
+        return res.status(403).json({ 
+          message: 'Access denied. You can only view final grades for courses you teach.' 
+        });
+      }
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can view final grades.' 
+      });
+    }
 
     // Get grade categories for the course
     const categories = await GradeCategory.find({ course: courseId, isActive: true })

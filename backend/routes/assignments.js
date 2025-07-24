@@ -12,7 +12,15 @@ router.get('/', auth, requireAdminOrApprovedFaculty, async (req, res) => {
     
     // If user is faculty, only show assignments for courses they teach
     if (req.user.role === 'faculty') {
-      query.instructor = req.user.userId;
+      // First find the faculty member record for this user
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(404).json({ message: 'Faculty member record not found' });
+      }
+      
+      query.instructor = facultyMember._id;
     }
     // Admin can see all assignments
     // Students will see assignments for courses they're enrolled in (handled separately)
@@ -35,9 +43,17 @@ router.get('/course/:courseId', auth, requireAdminOrApprovedFaculty, async (req,
   try {
     // Check if faculty has access to this course
     if (req.user.role === 'faculty') {
+      // First find the faculty member record for this user
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(404).json({ message: 'Faculty member record not found' });
+      }
+
       const course = await Course.findOne({ 
         _id: req.params.courseId, 
-        instructor: req.user.userId 
+        instructor: facultyMember._id 
       });
       
       if (!course) {
@@ -103,9 +119,17 @@ router.post('/', auth, async (req, res) => {
     
     // Check if faculty has access to create assignments for this course
     if (req.user.role === 'faculty') {
+      // First find the faculty member record for this user
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(404).json({ message: 'Faculty member record not found' });
+      }
+
       const course = await Course.findOne({ 
         _id: courseId, 
-        instructor: req.user.userId 
+        instructor: facultyMember._id 
       });
       
       if (!course) {
@@ -114,8 +138,8 @@ router.post('/', auth, async (req, res) => {
         });
       }
       
-      // Set the instructor to the current faculty user
-      req.body.instructor = req.user.userId;
+      // Set the instructor to the faculty member ID
+      req.body.instructor = facultyMember._id;
     } else if (req.user.role !== 'admin') {
       return res.status(403).json({ 
         message: 'Access denied. Only faculty and administrators can create assignments.' 
@@ -142,7 +166,15 @@ router.put('/:id', auth, async (req, res) => {
     
     // If user is faculty, ensure they can only update assignments they created
     if (req.user.role === 'faculty') {
-      query.instructor = req.user.userId;
+      // First find the faculty member record for this user
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(404).json({ message: 'Faculty member record not found' });
+      }
+      
+      query.instructor = facultyMember._id;
     } else if (req.user.role !== 'admin') {
       return res.status(403).json({ 
         message: 'Access denied. Only faculty and administrators can update assignments.' 

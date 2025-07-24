@@ -62,12 +62,8 @@ const GradingDashboard = ({ user }) => {
       console.log('Fetching courses from:', `${apiUrl}/api/courses`);
       console.log('User:', user);
       
-      // Try to get courses for the current instructor first
-      let url = `${apiUrl}/api/courses`;
-      if (user && user._id) {
-        // If we have user info, we could filter by instructor, but for now let's get all courses
-        // and filter on the frontend if needed
-      }
+      // Get courses for the current faculty member
+      let url = `${apiUrl}/api/courses/my-courses`;
       
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -80,25 +76,10 @@ const GradingDashboard = ({ user }) => {
         const data = await response.json();
         console.log('Courses data received:', data);
         
-        // For now, show all courses to debug the issue
-        // TODO: Filter courses where the current user is the instructor
-        let filteredCourses = data;
-        console.log('All courses:', data);
-        console.log('User object:', user);
-        
-        // Temporarily disable filtering to see all courses
-        /*
-        if (user && user._id) {
-          filteredCourses = data.filter(course => 
-            course.instructor && course.instructor._id === user._id
-          );
-          console.log('Filtered courses for instructor:', filteredCourses);
-        }
-        */
-        
-        setCourses(filteredCourses);
-        if (filteredCourses.length > 0) {
-          setSelectedCourse(filteredCourses[0]._id);
+        // The my-courses endpoint already filters courses for the current faculty member
+        setCourses(data);
+        if (data.length > 0) {
+          setSelectedCourse(data[0]._id);
         }
       } else {
         console.error('Failed to fetch courses:', response.status, response.statusText);

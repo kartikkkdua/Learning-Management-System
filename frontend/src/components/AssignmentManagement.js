@@ -43,7 +43,6 @@ const AssignmentManagement = () => {
     title: '',
     description: '',
     course: '',
-    instructor: '',
     dueDate: '',
     maxPoints: 100,
     type: 'assignment'
@@ -56,7 +55,11 @@ const AssignmentManagement = () => {
 
   const fetchAssignments = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/assignments');
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { 'Authorization': `Bearer ${token}` }
+      };
+      const response = await axios.get('http://localhost:3001/api/assignments', config);
       setAssignments(response.data);
     } catch (error) {
       console.error('Error fetching assignments:', error);
@@ -65,7 +68,12 @@ const AssignmentManagement = () => {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/courses');
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { 'Authorization': `Bearer ${token}` }
+      };
+      // Faculty should only see their own courses
+      const response = await axios.get('http://localhost:3001/api/courses/my-courses', config);
       setCourses(response.data);
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -74,16 +82,17 @@ const AssignmentManagement = () => {
 
   const handleSubmit = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      const assignmentData = {
-        ...formData,
-        instructor: user.id || user._id
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { 'Authorization': `Bearer ${token}` }
       };
+      
+      const assignmentData = { ...formData };
 
       if (editingAssignment) {
-        await axios.put(`http://localhost:3001/api/assignments/${editingAssignment._id}`, assignmentData);
+        await axios.put(`http://localhost:3001/api/assignments/${editingAssignment._id}`, assignmentData, config);
       } else {
-        await axios.post('http://localhost:3001/api/assignments', assignmentData);
+        await axios.post('http://localhost:3001/api/assignments', assignmentData, config);
       }
       fetchAssignments();
       handleClose();
@@ -95,7 +104,11 @@ const AssignmentManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this assignment?')) {
       try {
-        await axios.delete(`http://localhost:3001/api/assignments/${id}`);
+        const token = localStorage.getItem('token');
+        const config = {
+          headers: { 'Authorization': `Bearer ${token}` }
+        };
+        await axios.delete(`http://localhost:3001/api/assignments/${id}`, config);
         fetchAssignments();
       } catch (error) {
         console.error('Error deleting assignment:', error);
@@ -109,7 +122,6 @@ const AssignmentManagement = () => {
       title: assignment.title,
       description: assignment.description,
       course: assignment.course ? assignment.course._id : '',
-      instructor: assignment.instructor ? assignment.instructor._id : '',
       dueDate: assignment.dueDate.split('T')[0],
       maxPoints: assignment.maxPoints,
       type: assignment.type
@@ -124,7 +136,6 @@ const AssignmentManagement = () => {
       title: '',
       description: '',
       course: '',
-      instructor: '',
       dueDate: '',
       maxPoints: 100,
       type: 'assignment'

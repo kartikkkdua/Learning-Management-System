@@ -211,12 +211,17 @@ const EnrollmentManagement = () => {
   };
 
   const filteredEnrollments = enrollments.filter(enrollment => {
+    // Skip enrollments with missing course data
+    if (!enrollment.course || !enrollment.student) {
+      return false;
+    }
+
     const matchesSearch = !searchTerm || 
-      enrollment.student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enrollment.student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enrollment.student.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enrollment.course.courseCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      enrollment.course.title.toLowerCase().includes(searchTerm.toLowerCase());
+      enrollment.student.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      enrollment.student.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      enrollment.student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      enrollment.course.courseCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      enrollment.course.title?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCourse = !filterCourse || enrollment.course._id === filterCourse;
     const matchesFaculty = !filterFaculty || enrollment.course.faculty?._id === filterFaculty;
@@ -464,17 +469,19 @@ const EnrollmentManagement = () => {
                     <TableCell>
                       <Box>
                         <Typography variant="body2" fontWeight="bold">
-                          {enrollment.course.courseCode}
+                          {enrollment.course?.courseCode || 'N/A'}
                         </Typography>
                         <Typography variant="caption" color="textSecondary">
-                          {enrollment.course.title}
+                          {enrollment.course?.title || 'Course not found'}
                         </Typography>
                       </Box>
                     </TableCell>
                     <TableCell>
-                      {enrollment.course.faculty ? (
+                      {enrollment.course?.faculty ? (
                         <Chip 
-                          label={enrollment.course.faculty.code} 
+                          label={enrollment.course.faculty.user?.profile?.firstName 
+                            ? `${enrollment.course.faculty.user.profile.firstName} ${enrollment.course.faculty.user.profile.lastName}` 
+                            : enrollment.course.faculty.employeeId || 'Faculty'} 
                           color="primary" 
                           size="small" 
                         />
@@ -486,7 +493,7 @@ const EnrollmentManagement = () => {
                         />
                       )}
                     </TableCell>
-                    <TableCell>{enrollment.course.credits}</TableCell>
+                    <TableCell>{enrollment.course?.credits || 'N/A'}</TableCell>
                     <TableCell>
                       {new Date(enrollment.enrolledAt).toLocaleDateString()}
                     </TableCell>

@@ -32,20 +32,16 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 
-const CourseManagement = ({ user }) => {
+const CourseManagement = () => {
   const [courses, setCourses] = useState([]);
-  const [faculties, setFaculties] = useState([]);
-  const [availableFaculty, setAvailableFaculty] = useState([]);
+
   const [open, setOpen] = useState(false);
-  const [assignFacultyOpen, setAssignFacultyOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
   const [formData, setFormData] = useState({
     courseCode: '',
     title: '',
     description: '',
     credits: 3,
-    faculty: '',
     semester: 'Fall',
     year: new Date().getFullYear(),
     capacity: 30,
@@ -59,34 +55,38 @@ const CourseManagement = ({ user }) => {
 
   useEffect(() => {
     fetchCourses();
-    fetchFaculties();
   }, []);
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/courses');
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { 'Authorization': `Bearer ${token}` }
+      };
+      const response = await axios.get('http://localhost:3001/api/courses', config);
       setCourses(response.data);
     } catch (error) {
       console.error('Error fetching courses:', error);
+      setCourses([]);
     }
   };
 
-  const fetchFaculties = async () => {
-    try {
-      const response = await axios.get('http://localhost:3001/api/faculties/members');
-      setFaculties(response.data || []);
-    } catch (error) {
-      console.error('Error fetching faculties:', error);
-      setFaculties([]);
-    }
-  };
+
 
   const handleSubmit = async () => {
     try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { 'Authorization': `Bearer ${token}` }
+      };
+      
+      // Don't include faculty assignment - that's handled by Course-Faculty Assignment
+      const courseData = { ...formData };
+
       if (editingCourse) {
-        await axios.put(`http://localhost:3001/api/courses/${editingCourse._id}`, formData);
+        await axios.put(`http://localhost:3001/api/courses/${editingCourse._id}`, courseData, config);
       } else {
-        await axios.post('http://localhost:3001/api/courses', formData);
+        await axios.post('http://localhost:3001/api/courses', courseData, config);
       }
       fetchCourses();
       handleClose();
@@ -98,7 +98,11 @@ const CourseManagement = ({ user }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this course?')) {
       try {
-        await axios.delete(`http://localhost:3001/api/courses/${id}`);
+        const token = localStorage.getItem('token');
+        const config = {
+          headers: { 'Authorization': `Bearer ${token}` }
+        };
+        await axios.delete(`http://localhost:3001/api/courses/${id}`, config);
         fetchCourses();
       } catch (error) {
         console.error('Error deleting course:', error);
@@ -113,7 +117,7 @@ const CourseManagement = ({ user }) => {
       title: course.title,
       description: course.description || '',
       credits: course.credits,
-      faculty: course.faculty ? course.faculty._id : '',
+
       semester: course.semester,
       year: course.year,
       capacity: course.capacity,
@@ -135,7 +139,7 @@ const CourseManagement = ({ user }) => {
       title: '',
       description: '',
       credits: 3,
-      faculty: '',
+
       semester: 'Fall',
       year: new Date().getFullYear(),
       capacity: 30,
@@ -178,7 +182,7 @@ const CourseManagement = ({ user }) => {
             <TableRow>
               <TableCell>Course Code</TableCell>
               <TableCell>Title</TableCell>
-              <TableCell>Faculty</TableCell>
+              <TableCell>Assigned Faculty</TableCell>
               <TableCell>Credits</TableCell>
               <TableCell>Semester</TableCell>
               <TableCell>Enrolled</TableCell>
@@ -194,9 +198,9 @@ const CourseManagement = ({ user }) => {
                 </TableCell>
                 <TableCell>{course.title}</TableCell>
                 <TableCell>
-                  {course.faculty ? (
+                  {course.faculty || course.instructor ? (
                     <Chip 
-                      label={`${course.faculty.user?.profile?.firstName || ''} ${course.faculty.user?.profile?.lastName || ''} (${course.faculty.employeeId})`} 
+                      label={`${(course.faculty?.user?.profile?.firstName || course.instructor?.user?.profile?.firstName) || ''} ${(course.faculty?.user?.profile?.lastName || course.instructor?.user?.profile?.lastName) || ''} (${(course.faculty?.employeeId || course.instructor?.employeeId) || 'No ID'})`} 
                       color="secondary" 
                       size="small" 
                     />
@@ -254,6 +258,11 @@ const CourseManagement = ({ user }) => {
           {editingCourse ? 'Edit Course' : 'Add New Course'}
         </DialogTitle>
         <DialogContent>
+          <Box sx={{ mb: 2, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
+            <Typography variant="body2" color="info.contrastText">
+              📝 Note: Faculty assignment is managed through the "Course-Faculty Assignment" section
+            </Typography>
+          </Box>
           <Grid container spacing={2}>
             <Grid item xs={6}>
               <TextField
@@ -302,23 +311,7 @@ const CourseManagement = ({ user }) => {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
             </Grid>
-            <Grid item xs={6}>
-              <FormControl fullWidth margin="dense">
-                <InputLabel>Faculty</InputLabel>
-                <Select
-                  value={formData.faculty}
-                  label="Faculty"
-                  onChange={(e) => setFormData({ ...formData, faculty: e.target.value })}
-                >
-                  {faculties.map((faculty) => (
-                    <MenuItem key={faculty._id} value={faculty._id}>
-                      {faculty.user?.profile?.firstName} {faculty.user?.profile?.lastName} ({faculty.employeeId})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={3}>
+            <Grid item xs={4}>
               <FormControl fullWidth margin="dense">
                 <InputLabel>Semester</InputLabel>
                 <Select
@@ -332,7 +325,7 @@ const CourseManagement = ({ user }) => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={3}>
+            <Grid item xs={4}>
               <TextField
                 margin="dense"
                 label="Year"

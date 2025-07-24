@@ -621,4 +621,89 @@ router.post('/faculty/sync-users', requireAdmin, async (req, res) => {
   }
 });
 
+// Update faculty member details (Admin only)
+router.put('/faculty/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { employeeId, position, department, status } = req.body;
+
+    const facultyMember = await FacultyMember.findById(id);
+    if (!facultyMember) {
+      return res.status(404).json({
+        success: false,
+        message: 'Faculty member not found'
+      });
+    }
+
+    // Update faculty member fields
+    if (employeeId !== undefined) facultyMember.employeeId = employeeId;
+    if (position !== undefined) facultyMember.position = position;
+    if (department !== undefined) facultyMember.department = department;
+    if (status !== undefined) {
+      facultyMember.status = status;
+      facultyMember.isApproved = status === 'approved';
+      if (status === 'approved') {
+        facultyMember.approvedBy = req.user.userId;
+        facultyMember.approvedAt = new Date();
+      }
+    }
+
+    await facultyMember.save();
+
+    // Populate the updated faculty member
+    const updatedFaculty = await FacultyMember.findById(id)
+      .populate('user', 'username email profile')
+      .populate('department', 'name code')
+      .populate('approvedBy', 'username');
+
+    res.json({
+      success: true,
+      message: 'Faculty member updated successfully',
+      data: updatedFaculty
+    });
+  } catch (error) {
+    console.error('Error updating faculty member:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Update user details (Admin only)
+router.put('/users/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { profile, email } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Update user fields
+    if (email !== undefined) user.email = email;
+    if (profile !== undefined) {
+      user.profile = { ...user.profile, ...profile };
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      data: user
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;

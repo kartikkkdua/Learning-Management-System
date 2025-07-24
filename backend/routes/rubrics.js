@@ -8,6 +8,32 @@ router.get('/course/:courseId', auth, async (req, res) => {
   try {
     const { courseId } = req.params;
     
+    // Check if faculty has access to this course
+    if (req.user.role === 'faculty') {
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(404).json({ message: 'Faculty member record not found' });
+      }
+
+      const Course = require('../models/Course');
+      const course = await Course.findOne({ 
+        _id: courseId, 
+        instructor: facultyMember._id 
+      });
+      
+      if (!course) {
+        return res.status(403).json({ 
+          message: 'Access denied. You can only view rubrics for courses you teach.' 
+        });
+      }
+    } else if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Only faculty and administrators can view rubrics.' 
+      });
+    }
+    
     const rubrics = await GradingRubric.find({ course: courseId, isActive: true })
       .populate('createdBy', 'username profile')
       .sort({ createdAt: -1 });

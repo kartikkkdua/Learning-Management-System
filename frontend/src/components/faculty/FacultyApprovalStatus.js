@@ -18,41 +18,68 @@ import {
 import axios from 'axios';
 
 const FacultyApprovalStatus = ({ user }) => {
-  const [facultyStatus, setFacultyStatus] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [facultyStatus, setFacultyStatus] = useState(user?.facultyStatus || 'unknown');
+  const [facultyApproved, setFacultyApproved] = useState(user?.facultyApproved);
+  const [loading, setLoading] = useState(false);
+
+  // Debug: Log user object to see what's available
+  console.log('FacultyApprovalStatus - User object:', user);
+  console.log('Initial Faculty Status:', facultyStatus, 'Faculty Approved:', facultyApproved);
 
   useEffect(() => {
-    fetchFacultyStatus();
-  }, []);
+    // If faculty status is not available in user object, fetch it
+    if (user?.role === 'faculty' && (!user?.facultyStatus || user?.facultyStatus === 'unknown')) {
+      fetchFacultyStatus();
+    }
+  }, [user]);
 
   const fetchFacultyStatus = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const config = {
         headers: { 'Authorization': `Bearer ${token}` }
       };
 
-      // Try to access a faculty-only endpoint to check approval status
-      const response = await axios.get('http://localhost:3001/api/courses', config);
-      setFacultyStatus('approved');
-    } catch (error) {
-      if (error.response?.status === 403 && 
-          error.response?.data?.message?.includes('pending approval')) {
-        setFacultyStatus('pending');
-      } else {
-        setFacultyStatus('error');
+      // Get current user profile with faculty status
+      const response = await axios.get('http://localhost:3001/api/auth/profile', config);
+      const userData = response.data;
+      
+      if (userData.facultyStatus) {
+        setFacultyStatus(userData.facultyStatus);
+        setFacultyApproved(userData.facultyApproved);
+        
+        // Update localStorage with new user data
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const updatedUser = {
+          ...currentUser,
+          facultyStatus: userData.facultyStatus,
+          facultyApproved: userData.facultyApproved
+        };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
       }
+    } catch (error) {
+      console.error('Error fetching faculty status:', error);
+      setFacultyStatus('unknown');
+      setFacultyApproved(false);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
+  // Don't show anything if user is not faculty
+  if (user?.role !== 'faculty') {
+    return null;
+  }
+  
+  // Don't show if already approved
+  if (facultyApproved === true || facultyStatus === 'approved') {
     return null;
   }
 
-  if (facultyStatus === 'approved') {
-    return null; // Don't show anything if approved
+  // Don't show while loading
+  if (loading) {
+    return null;
   }
 
   const getStatusConfig = () => {
@@ -142,8 +169,9 @@ const FacultyApprovalStatus = ({ user }) => {
               <Button
                 variant="text"
                 onClick={fetchFacultyStatus}
+                disabled={loading}
               >
-                Refresh Status
+                {loading ? 'Checking...' : 'Refresh Status'}
               </Button>
             </Box>
           </Box>

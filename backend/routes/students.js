@@ -10,8 +10,16 @@ router.get('/', auth, async (req, res) => {
     let students = [];
 
     if (req.user.role === 'faculty') {
-      // Get courses taught by this specific faculty user
-      const facultyCourses = await Course.find({ instructor: req.user.userId })
+      // First find the faculty member record for this user
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(404).json({ message: 'Faculty member record not found' });
+      }
+
+      // Get courses taught by this specific faculty member
+      const facultyCourses = await Course.find({ instructor: facultyMember._id })
         .populate('enrolledStudents')
         .select('enrolledStudents');
       
@@ -57,9 +65,17 @@ router.get('/course/:courseId', auth, async (req, res) => {
   try {
     // Check if faculty has access to this course
     if (req.user.role === 'faculty') {
+      // First find the faculty member record for this user
+      const FacultyMember = require('../models/FacultyMember');
+      const facultyMember = await FacultyMember.findOne({ user: req.user.userId });
+      
+      if (!facultyMember) {
+        return res.status(404).json({ message: 'Faculty member record not found' });
+      }
+
       const course = await Course.findOne({ 
         _id: req.params.courseId, 
-        instructor: req.user.userId 
+        instructor: facultyMember._id 
       });
       
       if (!course) {

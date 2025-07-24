@@ -1,3 +1,6 @@
+frontend/.env
+backend/.env
+
 # Keep template environment files in git
 backend/.env.local
 backend/.env.production

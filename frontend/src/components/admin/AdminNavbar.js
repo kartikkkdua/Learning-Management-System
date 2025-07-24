@@ -99,6 +99,19 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
+            to="/course-assignment"
+            startIcon={<Settings />}
+            sx={{ 
+              backgroundColor: isActive('/course-assignment') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Assign Faculty
+          </Button>
+          
+          <Button 
+            color="inherit" 
+            component={Link} 
             to="/enrollments"
             startIcon={<PersonAdd />}
             sx={{ 
@@ -184,7 +197,7 @@ const AdminNavbar = ({ user, onLogout }) => {
               borderRadius: 2
             }}
           >
-            Create Alert
+            Alert
           </Button>
           
           <Button 

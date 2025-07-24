@@ -4,8 +4,8 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import FacultyNavbar from './FacultyNavbar';
 import FacultyDashboard from './FacultyDashboard';
-import CourseManagement from '../CourseManagement';
-import StudentManagement from '../student/StudentManagement';
+import FacultyCourses from './FacultyCourses';
+import FacultyStudents from './FacultyStudents';
 import AssignmentManagement from '../AssignmentManagement';
 import GradingDashboard from '../grading/GradingDashboard';
 import AttendanceManagement from '../AttendanceManagement';
@@ -39,8 +39,8 @@ const FacultyPortal = ({ user, onLogout }) => {
           <FacultyNavbar user={user} onLogout={onLogout} />
           <Routes>
             <Route path="/" element={<FacultyDashboard user={user} />} />
-            <Route path="/courses" element={<CourseManagement user={user} />} />
-            <Route path="/students" element={<StudentManagement user={user} />} />
+            <Route path="/courses" element={<FacultyCourses user={user} />} />
+            <Route path="/students" element={<FacultyStudents user={user} />} />
             <Route path="/assignments" element={<AssignmentManagement user={user} />} />
             <Route path="/grading" element={<GradingDashboard user={user} />} />
             <Route path="/attendance" element={<AttendanceManagement user={user} />} />
