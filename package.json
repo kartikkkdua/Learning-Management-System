@@ -3,12 +3,19 @@
   "version": "1.0.0",
   "description": "Learning Management System with React frontend and Node.js backend",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "npm run env:local && concurrently \"npm run server\" \"npm run client\"",
     "server": "cd backend && npm run dev",
     "client": "cd frontend && npm start",
-    "build": "cd frontend && npm install && npm run build",
+    "build": "npm run env:prod && cd frontend && npm install && npm run build",
     "start": "cd backend && npm start",
-    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "setup-env": "node scripts/setup-env.js",
+    "env:local": "node scripts/env-setup.js local",
+    "env:dev": "node scripts/env-setup.js local",
+    "env:prod": "node scripts/env-setup.js production",
+    "env:production": "node scripts/env-setup.js production",
+    "env:render": "node scripts/env-setup.js render",
+    "deploy-help": "cat RENDER_DEPLOYMENT.md"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

@@ -231,7 +231,9 @@ router.post('/login', async (req, res) => {
         email: user.email,
         role: user.role,
         profile: user.profile,
-        twoFactorEnabled: user.twoFactorEnabled
+        twoFactorEnabled: user.twoFactorEnabled,
+        facultyStatus: user.facultyStatus,
+        facultyApproved: user.facultyApproved
       }
     });
   } catch (error) {
@@ -322,7 +324,7 @@ router.post('/verify-2fa', async (req, res) => {
       });
     }
 
-    // Check faculty approval status for faculty users (before completing login)
+    // Check faculty profile exists (but allow login even if pending)
     if (user.role === 'faculty') {
       const FacultyMember = require('../models/FacultyMember');
       const facultyMember = await FacultyMember.findOne({ user: user._id });
@@ -333,14 +335,10 @@ router.post('/verify-2fa', async (req, res) => {
           message: 'Faculty profile not found. Please contact an administrator.'
         });
       }
-
-      if (!facultyMember.isApproved || facultyMember.status !== 'approved') {
-        return res.status(403).json({
-          success: false,
-          message: 'Your faculty account is pending approval. Please contact an administrator.',
-          pendingApproval: true
-        });
-      }
+      
+      // Add faculty approval status to user object for frontend
+      user.facultyStatus = facultyMember.status;
+      user.facultyApproved = facultyMember.isApproved;
     }
 
     // Clear 2FA code and complete login

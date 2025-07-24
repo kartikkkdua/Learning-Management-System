@@ -12,7 +12,7 @@ const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
-      ? ["https://learning-management-system-3ksq.onrender.com/"] 
+      ? [process.env.FRONTEND_URL || "https://your-frontend-url.onrender.com"] 
       : ["http://localhost:3000"],
     methods: ["GET", "POST"],
     credentials: true
@@ -24,7 +24,7 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? (process.env.FRONTEND_URL || "https://learning-management-system-3ksq.onrender.com/")
+    ? (process.env.FRONTEND_URL || "https://your-frontend-url.onrender.com")
     : "http://localhost:3000",
   credentials: true
 }));
