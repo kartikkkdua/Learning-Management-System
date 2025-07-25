@@ -85,7 +85,12 @@ const CreateNotification = ({ user }) => {
   const fetchCourses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3001/api/courses', {
+      // Faculty should only see their own courses
+      const endpoint = user?.role === 'faculty' ? 
+        'http://localhost:3001/api/courses/my-courses' : 
+        'http://localhost:3001/api/courses';
+        
+      const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCourses(response.data || []);

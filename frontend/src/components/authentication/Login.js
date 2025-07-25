@@ -47,14 +47,22 @@ const Login = ({ onLogin }) => {
   const [resetToken, setResetToken] = useState('');
   const [registrationSuccess, setRegistrationSuccess] = useState('');
 
-  // Check for reset token in URL on component mount
+  // Check for reset token and register mode in URL on component mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
+    const mode = urlParams.get('mode');
+    
     if (token) {
       setResetToken(token);
       setShowResetPassword(true);
       // Clear the token from URL for security
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    if (mode === 'register') {
+      setIsRegister(true);
+      // Clear the mode from URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);

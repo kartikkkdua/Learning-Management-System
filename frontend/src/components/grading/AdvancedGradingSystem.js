@@ -22,7 +22,12 @@ const AdvancedGradingSystem = ({ user }) => {
       const token = localStorage.getItem('token');
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
       
-      const response = await fetch(`${apiUrl}/api/courses`, {
+      // Faculty should only see their own courses
+      const endpoint = user?.role === 'faculty' ? 
+        `${apiUrl}/api/courses/my-courses` : 
+        `${apiUrl}/api/courses`;
+        
+      const response = await fetch(endpoint, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

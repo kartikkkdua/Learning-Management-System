@@ -72,7 +72,17 @@ const GradingSystem = () => {
 
     const fetchCourses = async () => {
         try {
-            const response = await axios.get('http://localhost:3001/api/courses');
+            const token = localStorage.getItem('token');
+            const config = {
+                headers: { 'Authorization': `Bearer ${token}` }
+            };
+            
+            // Faculty should only see their own courses
+            const endpoint = user?.role === 'faculty' ? 
+                'http://localhost:3001/api/courses/my-courses' : 
+                'http://localhost:3001/api/courses';
+                
+            const response = await axios.get(endpoint, config);
             setCourses(response.data);
         } catch (error) {
             console.error('Error fetching courses:', error);

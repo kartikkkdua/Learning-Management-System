@@ -91,7 +91,18 @@ const AnnouncementManagement = () => {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/courses');
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: { 'Authorization': `Bearer ${token}` }
+      };
+      
+      // Use my-courses for faculty, all courses for admin
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const endpoint = user.role === 'faculty' ? 
+        'http://localhost:3001/api/courses/my-courses' : 
+        'http://localhost:3001/api/courses';
+        
+      const response = await axios.get(endpoint, config);
       setCourses(response.data);
     } catch (error) {
       console.error('Error fetching courses:', error);

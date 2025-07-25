@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "setup-faculty": "node scripts/setupFacultyPortalData.js",
+    "check-faculty": "node scripts/checkFacultyPortalStatus.js",
+    "faculty-setup": "node scripts/runFacultyPortalSetup.js",
+    "test-password-reset": "node scripts/runPasswordResetTest.js"
   },
   "dependencies": {
     "axios": "^1.10.0",

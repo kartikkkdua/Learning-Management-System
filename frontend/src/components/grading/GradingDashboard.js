@@ -59,7 +59,7 @@ const GradingDashboard = ({ user }) => {
       const token = localStorage.getItem('token');
       const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
       
-      console.log('Fetching courses from:', `${apiUrl}/api/courses`);
+      console.log('Fetching courses from:', `${apiUrl}/api/courses/my-courses`);
       console.log('User:', user);
       
       // Get courses for the current faculty member

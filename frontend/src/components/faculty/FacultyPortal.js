@@ -1,20 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import FacultyNavbar from './FacultyNavbar';
 import FacultyDashboard from './FacultyDashboard';
-import FacultyCourses from './FacultyCourses';
-import FacultyStudents from './FacultyStudents';
-import AssignmentManagement from '../AssignmentManagement';
-import GradingDashboard from '../grading/GradingDashboard';
-import AttendanceManagement from '../AttendanceManagement';
-import AnnouncementManagement from '../AnnouncementManagement';
-import DiscussionForum from '../DiscussionForum';
-import AcademicCalendar from '../AcademicCalendar';
-import NotificationCenter from '../notification/NotificationCenter';
-import CreateNotification from '../notification/CreateNotification';
-import EmailDashboard from '../email/EmailDashboard';
 
 const facultyTheme = createTheme({
   palette: {
@@ -34,26 +22,10 @@ const FacultyPortal = ({ user, onLogout }) => {
   return (
     <ThemeProvider theme={facultyTheme}>
       <CssBaseline />
-      <Router>
-        <div className="FacultyPortal">
-          <FacultyNavbar user={user} onLogout={onLogout} />
-          <Routes>
-            <Route path="/" element={<FacultyDashboard user={user} />} />
-            <Route path="/courses" element={<FacultyCourses user={user} />} />
-            <Route path="/students" element={<FacultyStudents user={user} />} />
-            <Route path="/assignments" element={<AssignmentManagement user={user} />} />
-            <Route path="/grading" element={<GradingDashboard user={user} />} />
-            <Route path="/attendance" element={<AttendanceManagement user={user} />} />
-            {/* <Route path="/announcements" element={<AnnouncementManagement user={user} />} /> */}
-            <Route path="/discussions" element={<DiscussionForum user={user} />} />
-            <Route path="/calendar" element={<AcademicCalendar user={user} />} />
-            <Route path="/notifications" element={<NotificationCenter user={user} />} />
-            <Route path="/create-notification" element={<CreateNotification user={user} />} />
-            <Route path="/email" element={<EmailDashboard user={user} />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </div>
-      </Router>
+      <div className="FacultyPortal">
+        <FacultyNavbar user={user} onLogout={onLogout} />
+        <FacultyDashboard user={user} />
+      </div>
     </ThemeProvider>
   );
 };
