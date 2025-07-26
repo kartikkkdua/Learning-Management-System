@@ -11,7 +11,6 @@ import {
 } from '@mui/material';
 import {
   HourglassEmpty,
-  CheckCircle,
   Cancel,
   Email
 } from '@mui/icons-material';

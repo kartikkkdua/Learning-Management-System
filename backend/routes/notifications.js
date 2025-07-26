@@ -1,19 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
-const User = require('../models/User');
-const Student = require('../models/Student');
-const NotificationService = require('../services/notificationService');
 const auth = require('../middleware/auth');
 
-// Get notifications for a user
-router.get('/user/:userId', async (req, res) => {
+// Get notifications for the current user
+router.get('/', auth, async (req, res) => {
   try {
-    const { page = 1, limit = 20, unreadOnly = false, type } = req.query;
-    const userId = req.params.userId;
+    const { page = 1, limit = 50, unreadOnly = false, type } = req.query;
     
     // Build query
-    const query = { recipient: userId };
+    const query = { recipient: req.user.id };
     if (unreadOnly === 'true') {
       query.isRead = false;
     }
@@ -22,7 +18,7 @@ router.get('/user/:userId', async (req, res) => {
     }
     
     const notifications = await Notification.find(query)
-      .populate('metadata.course', 'courseCode title')
+      .populate('metadata.course', 'name code')
       .populate('metadata.assignment', 'title dueDate')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
@@ -30,29 +26,33 @@ router.get('/user/:userId', async (req, res) => {
     
     const total = await Notification.countDocuments(query);
     const unreadCount = await Notification.countDocuments({ 
-      recipient: userId, 
+      recipient: req.user.id, 
       isRead: false 
     });
     
     res.json({
       notifications,
       pagination: {
-        currentPage: page,
+        currentPage: parseInt(page),
         totalPages: Math.ceil(total / limit),
         totalNotifications: total,
         unreadCount
       }
     });
   } catch (error) {
+    console.error('Error fetching notifications:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
 // Mark notification as read
-router.patch('/:notificationId/read', async (req, res) => {
+router.put('/:id/read', auth, async (req, res) => {
   try {
-    const notification = await Notification.findByIdAndUpdate(
-      req.params.notificationId,
+    const notification = await Notification.findOneAndUpdate(
+      { 
+        _id: req.params.id, 
+        recipient: req.user.id 
+      },
       { 
         isRead: true, 
         readAt: new Date() 
@@ -64,75 +64,139 @@ router.patch('/:notificationId/read', async (req, res) => {
       return res.status(404).json({ message: 'Notification not found' });
     }
     
-    res.json(notification);
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      const unreadCount = await Notification.countDocuments({ 
+        recipient: req.user.id, 
+        isRead: false 
+      });
+      io.to(`user_${req.user.id}`).emit('notificationCount', unreadCount);
+    }
+    
+    res.json({ 
+      message: 'Notification marked as read',
+      notification 
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 
-// Mark all notifications as read for a user
-router.patch('/user/:userId/read-all', async (req, res) => {
+// Mark all notifications as read for current user
+router.put('/read-all', auth, async (req, res) => {
   try {
     const result = await Notification.updateMany(
-      { recipient: req.params.userId, isRead: false },
+      { recipient: req.user.id, isRead: false },
       { 
         isRead: true, 
         readAt: new Date() 
       }
     );
     
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${req.user.id}`).emit('notificationCount', 0);
+    }
+    
     res.json({ 
       message: 'All notifications marked as read',
       modifiedCount: result.modifiedCount 
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 
 // Delete notification
-router.delete('/:notificationId', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
-    const notification = await Notification.findByIdAndDelete(req.params.notificationId);
+    const notification = await Notification.findOneAndDelete({
+      _id: req.params.id,
+      recipient: req.user.id
+    });
     
     if (!notification) {
       return res.status(404).json({ message: 'Notification not found' });
     }
     
+    // Emit real-time update
+    const io = req.app.get('io');
+    if (io) {
+      const unreadCount = await Notification.countDocuments({ 
+        recipient: req.user.id, 
+        isRead: false 
+      });
+      io.to(`user_${req.user.id}`).emit('notificationCount', unreadCount);
+    }
+    
     res.json({ message: 'Notification deleted successfully' });
   } catch (error) {
+    console.error('Error deleting notification:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// Create notification with real-time emission
-router.post('/', async (req, res) => {
+// Create notification
+router.post('/', auth, async (req, res) => {
   try {
+    const { title, message, type, recipient, priority, category, actionUrl, metadata } = req.body;
+    
+    // Validate required fields
+    if (!title || !message || !type) {
+      return res.status(400).json({ message: 'Title, message, and type are required' });
+    }
+    
+    // If no recipient specified, send to self (for testing)
+    const finalRecipient = recipient || req.user.id;
+    
     const io = req.app.get('io');
-    const notificationService = new NotificationService(io);
+    const notification = await Notification.createAndEmit({
+      title,
+      message,
+      type,
+      recipient: finalRecipient,
+      priority: priority || 'medium',
+      category: category || 'academic',
+      actionUrl,
+      metadata: metadata || {}
+    }, io);
     
-    const notification = await notificationService.createNotification(req.body);
-    
-    res.status(201).json(notification);
+    res.status(201).json({ 
+      message: 'Notification created successfully',
+      notification 
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error creating notification:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 
-// Bulk create notifications with real-time emission
-router.post('/bulk', async (req, res) => {
+// Bulk create notifications
+router.post('/bulk', auth, async (req, res) => {
   try {
-    const { recipients, title, message, type, priority = 'medium', metadata } = req.body;
+    const { recipients, title, message, type, priority = 'medium', category = 'academic', metadata } = req.body;
     
     if (!recipients || !Array.isArray(recipients)) {
       return res.status(400).json({ message: 'Recipients array is required' });
     }
     
-    const io = req.app.get('io');
-    const notificationService = new NotificationService(io);
+    if (!title || !message || !type) {
+      return res.status(400).json({ message: 'Title, message, and type are required' });
+    }
     
-    const notificationData = { title, message, type, priority, metadata };
-    const notifications = await notificationService.broadcastNotification(recipients, notificationData);
+    const io = req.app.get('io');
+    const notifications = await Notification.broadcastToUsers(recipients, {
+      title,
+      message,
+      type,
+      priority,
+      category,
+      metadata: metadata || {}
+    }, io);
     
     res.status(201).json({
       message: 'Bulk notifications created successfully',
@@ -140,118 +204,52 @@ router.post('/bulk', async (req, res) => {
       notifications
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Enhanced mark as read with real-time updates
-router.patch('/:notificationId/read', async (req, res) => {
-  try {
-    const io = req.app.get('io');
-    const notificationService = new NotificationService(io);
-    
-    const notification = await Notification.findById(req.params.notificationId);
-    if (!notification) {
-      return res.status(404).json({ message: 'Notification not found' });
-    }
-    
-    const updatedNotification = await notificationService.markAsRead(req.params.notificationId, notification.recipient);
-    
-    res.json(updatedNotification);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Enhanced mark all as read with real-time updates
-router.patch('/user/:userId/read-all', async (req, res) => {
-  try {
-    const io = req.app.get('io');
-    const notificationService = new NotificationService(io);
-    
-    await notificationService.markAllAsRead(req.params.userId);
-    
-    res.json({ 
-      message: 'All notifications marked as read'
-    });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Get notification statistics for a user
-router.get('/user/:userId/stats', async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    
-    const stats = await Notification.aggregate([
-      { $match: { recipient: mongoose.Types.ObjectId(userId) } },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          unread: { $sum: { $cond: [{ $eq: ['$isRead', false] }, 1, 0] } },
-          byType: {
-            $push: {
-              type: '$type',
-              isRead: '$isRead'
-            }
-          },
-          byPriority: {
-            $push: {
-              priority: '$priority',
-              isRead: '$isRead'
-            }
-          }
-        }
-      }
-    ]);
-    
-    // Process type and priority statistics
-    const typeStats = {};
-    const priorityStats = {};
-    
-    if (stats.length > 0) {
-      stats[0].byType.forEach(item => {
-        if (!typeStats[item.type]) {
-          typeStats[item.type] = { total: 0, unread: 0 };
-        }
-        typeStats[item.type].total++;
-        if (!item.isRead) {
-          typeStats[item.type].unread++;
-        }
-      });
-      
-      stats[0].byPriority.forEach(item => {
-        if (!priorityStats[item.priority]) {
-          priorityStats[item.priority] = { total: 0, unread: 0 };
-        }
-        priorityStats[item.priority].total++;
-        if (!item.isRead) {
-          priorityStats[item.priority].unread++;
-        }
-      });
-    }
-    
-    res.json({
-      total: stats.length > 0 ? stats[0].total : 0,
-      unread: stats.length > 0 ? stats[0].unread : 0,
-      byType: typeStats,
-      byPriority: priorityStats
-    });
-  } catch (error) {
+    console.error('Error creating bulk notifications:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// Get notification stats for a user
-router.get('/user/:userId/stats', auth, async (req, res) => {
+
+
+// Get unread notification count
+router.get('/unread/count', auth, async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const count = await Notification.countDocuments({ 
+      recipient: req.user.id, 
+      isRead: false 
+    });
     
+    res.json({ count });
+  } catch (error) {
+    console.error('Error fetching unread count:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get only unread notifications
+router.get('/unread', auth, async (req, res) => {
+  try {
+    const notifications = await Notification.find({ 
+      recipient: req.user.id, 
+      isRead: false 
+    })
+    .populate('metadata.course', 'name code')
+    .populate('metadata.assignment', 'title dueDate')
+    .sort({ createdAt: -1 });
+    
+    res.json({ notifications });
+  } catch (error) {
+    console.error('Error fetching unread notifications:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get notification stats for current user
+router.get('/stats', auth, async (req, res) => {
+  try {
     const [unreadCount, totalCount] = await Promise.all([
-      Notification.countDocuments({ recipient: userId, isRead: false }),
-      Notification.countDocuments({ recipient: userId })
+      Notification.countDocuments({ recipient: req.user.id, isRead: false }),
+      Notification.countDocuments({ recipient: req.user.id })
     ]);
     
     res.json({
@@ -272,7 +270,7 @@ router.get('/user/:userId/stats', auth, async (req, res) => {
 });
 
 // Get general notification stats (admin only)
-router.get('/stats', auth, async (req, res) => {
+router.get('/admin/stats', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({

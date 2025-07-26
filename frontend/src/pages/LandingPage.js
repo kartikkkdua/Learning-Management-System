@@ -8,10 +8,8 @@ import {
   Card,
   CardContent,
   Avatar,
-  Chip,
   Paper,
   useTheme,
-  useMediaQuery
 } from '@mui/material';
 import {
   School,
@@ -21,7 +19,6 @@ import {
   Security,
   CloudSync,
   ArrowForward,
-  CheckCircle,
   Star,
   PlayArrow
 } from '@mui/icons-material';
@@ -29,7 +26,6 @@ import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
 
   const features = [

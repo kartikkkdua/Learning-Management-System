@@ -18,17 +18,9 @@ import {
   Button,
   Tabs,
   Tab,
-  Divider,
   Alert,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ListItemSecondaryAction
 } from '@mui/material';
 import {
-  Settings,
   Notifications,
   Palette,
   Security,
@@ -39,11 +31,6 @@ import {
   Email,
   Sms,
   PhoneAndroid,
-  DarkMode,
-  Language,
-  Schedule,
-  Visibility,
-  VolumeUp
 } from '@mui/icons-material';
 import axios from 'axios';
 

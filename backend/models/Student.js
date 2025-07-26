@@ -51,4 +51,13 @@ const studentSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Generate student ID automatically if not provided
+studentSchema.pre('save', async function(next) {
+  if (!this.studentId) {
+    const count = await this.constructor.countDocuments();
+    this.studentId = `STU${String(count + 1).padStart(4, '0')}`;
+  }
+  next();
+});
+
 module.exports = mongoose.model('Student', studentSchema);

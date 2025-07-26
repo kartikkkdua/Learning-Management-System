@@ -5,7 +5,7 @@ const FacultyMember = require('../models/FacultyMember');
 const requireApprovedFaculty = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.userId);
-    
+
     if (!user || user.role !== 'faculty') {
       return res.status(403).json({
         success: false,
@@ -15,7 +15,7 @@ const requireApprovedFaculty = async (req, res, next) => {
 
     // Check if faculty member is approved
     const facultyMember = await FacultyMember.findOne({ user: user._id });
-    
+
     if (!facultyMember) {
       return res.status(403).json({
         success: false,
@@ -45,7 +45,7 @@ const requireApprovedFaculty = async (req, res, next) => {
 const requireFaculty = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.userId);
-    
+
     if (!user || user.role !== 'faculty') {
       return res.status(403).json({
         success: false,
@@ -56,7 +56,7 @@ const requireFaculty = async (req, res, next) => {
     // Get faculty member info
     const facultyMember = await FacultyMember.findOne({ user: user._id });
     req.facultyMember = facultyMember;
-    
+
     next();
   } catch (error) {
     res.status(500).json({
@@ -70,7 +70,7 @@ const requireFaculty = async (req, res, next) => {
 const requireAdminOrApprovedFaculty = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.userId);
-    
+
     if (!user) {
       return res.status(403).json({
         success: false,
@@ -84,7 +84,7 @@ const requireAdminOrApprovedFaculty = async (req, res, next) => {
 
     if (user.role === 'faculty') {
       const facultyMember = await FacultyMember.findOne({ user: user._id });
-      
+
       if (!facultyMember || !facultyMember.isApproved || facultyMember.status !== 'approved') {
         return res.status(403).json({
           success: false,

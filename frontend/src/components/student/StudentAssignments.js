@@ -22,7 +22,6 @@ import {
     DialogActions,
     TextField,
     Alert,
-    LinearProgress
 } from '@mui/material';
 import {
     Assignment,
@@ -31,7 +30,6 @@ import {
     Warning,
     Error,
     Upload,
-    Download,
     Visibility
 } from '@mui/icons-material';
 import axios from 'axios';

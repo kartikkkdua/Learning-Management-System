@@ -30,7 +30,7 @@ import axios from 'axios';
 
 const StudentGrades = ({ user }) => {
   const [grades, setGrades] = useState([]);
-  const [courses, setCourses] = useState([]);
+  const [setCourses] = useState([]);
   const [selectedSemester, setSelectedSemester] = useState('current');
   const [gradeStats, setGradeStats] = useState({
     currentGPA: 3.7,
@@ -114,14 +114,6 @@ const StudentGrades = ({ user }) => {
     if (['B+', 'B', 'B-'].includes(letterGrade)) return 'info';
     if (['C+', 'C', 'C-'].includes(letterGrade)) return 'warning';
     return 'error';
-  };
-
-  const calculateCourseAverage = (assignments) => {
-    const totalWeight = assignments.reduce((sum, assignment) => sum + assignment.weight, 0);
-    const weightedSum = assignments.reduce((sum, assignment) => 
-      sum + (assignment.grade / assignment.maxPoints * 100 * assignment.weight), 0
-    );
-    return totalWeight > 0 ? weightedSum / totalWeight : 0;
   };
 
   const StatCard = ({ title, value, icon, color, subtitle }) => (

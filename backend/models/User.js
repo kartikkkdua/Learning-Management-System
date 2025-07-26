@@ -16,7 +16,10 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: function() {
+      // Password not required for social auth users
+      return !this.socialAuth || (!this.socialAuth.googleId && !this.socialAuth.githubId && !this.socialAuth.facebookId && !this.socialAuth.microsoftId);
+    },
     minlength: 6
   },
   role: {
@@ -77,13 +80,51 @@ const userSchema = new mongoose.Schema({
   twoFactorCodeAttempts: {
     type: Number,
     default: 0
+  },
+  
+  // Social Authentication
+  socialAuth: {
+    googleId: String,
+    githubId: String,
+    facebookId: String,
+    microsoftId: String,
+    google: {
+      id: String,
+      email: String,
+      name: String,
+      picture: String
+    },
+    github: {
+      id: String,
+      username: String,
+      email: String,
+      name: String,
+      avatar: String
+    },
+    facebook: {
+      id: String,
+      email: String,
+      name: String,
+      picture: String
+    },
+    microsoft: {
+      id: String,
+      email: String,
+      name: String
+    }
+  },
+  
+  // Email verification
+  isEmailVerified: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
 });
 
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });

@@ -19,8 +19,7 @@ import {
   ArrowBack,
   Help,
   Book,
-  Dashboard,
-  Settings
+  Dashboard
 } from '@mui/icons-material';
 
 const NotFoundPage = () => {

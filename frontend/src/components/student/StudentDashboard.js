@@ -20,10 +20,7 @@ import {
   Assignment,
   Grade,
   EventNote,
-  Campaign,
   Schedule,
-  TrendingUp,
-  CheckCircle
 } from '@mui/icons-material';
 import axios from 'axios';
 

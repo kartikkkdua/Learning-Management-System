@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const academicCalendarSchema = new mongoose.Schema({
   academicYear: {
     type: String,
-    required: true // e.g., "2024-2025"
+    required: true 
   },
   semester: {
     type: String,
@@ -40,7 +40,7 @@ const academicCalendarSchema = new mongoose.Schema({
     earlyRegistration: {
       startDate: Date,
       endDate: Date,
-      eligibleStudents: [String] // e.g., ["senior", "junior"]
+      eligibleStudents: [String] 
     },
     regularRegistration: {
       startDate: Date,

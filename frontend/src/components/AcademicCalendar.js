@@ -15,15 +15,13 @@ import {
   Alert,
   Tabs,
   Tab,
-  Badge
+  Badge,
 } from '@mui/material';
 import {
   Event,
-  Schedule,
   School,
   Assignment,
   Warning,
-  Info,
   CheckCircle,
   AccessTime
 } from '@mui/icons-material';
@@ -97,10 +95,6 @@ const AcademicCalendar = ({ user }) => {
       case 'graduation': return 'success';
       default: return 'default';
     }
-  };
-
-  const getPriorityIcon = (isImportant) => {
-    return isImportant ? <Warning color="error" /> : <Info color="info" />;
   };
 
   const formatDate = (dateString) => {

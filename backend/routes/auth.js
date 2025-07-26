@@ -34,16 +34,21 @@ router.post('/register', async (req, res) => {
     if (role === 'student') {
       const Student = require('../models/Student');
       try {
+        // Generate studentId
+        const studentCount = await Student.countDocuments();
+        const studentId = `STU${String(studentCount + 1).padStart(4, '0')}`;
+        
         const student = new Student({
           user: user._id,
-          firstName: profile?.firstName || '',
+          studentId: studentId,
+          firstName: profile?.firstName || user.username,
           lastName: profile?.lastName || '',
           email: user.email,
           // Default faculty assignment - should be updated by admin
           faculty: null
         });
         await student.save();
-        console.log(`Student profile created for user: ${user.username}`);
+        console.log(`Student profile created for user: ${user.username} with ID: ${studentId}`);
       } catch (studentError) {
         console.error('Failed to create student profile:', studentError);
       }

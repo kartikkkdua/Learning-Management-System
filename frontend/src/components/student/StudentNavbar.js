@@ -9,12 +9,10 @@ import {
   Menu,
   MenuItem,
   IconButton,
-  Badge
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   School, 
-  AccountCircle, 
   Logout,
   Dashboard as DashboardIcon,
   MenuBook,
@@ -23,11 +21,11 @@ import {
   Campaign,
   EventNote,
   Person,
-  Notifications,
   TrendingUp,
   CalendarToday,
   HourglassEmpty,
-  Settings
+  Settings,
+  VideoCall
 } from '@mui/icons-material';
 import NotificationBell from '../notification/NotificationBell';
 
@@ -62,10 +60,10 @@ const StudentNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/"
+            to="/student"
             startIcon={<DashboardIcon />}
             sx={{ 
-              backgroundColor: isActive('/') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/student') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -75,10 +73,10 @@ const StudentNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/courses"
+            to="/student/courses"
             startIcon={<MenuBook />}
             sx={{ 
-              backgroundColor: isActive('/courses') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/student/courses') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -88,10 +86,10 @@ const StudentNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/assignments"
+            to="/student/assignments"
             startIcon={<Assignment />}
             sx={{ 
-              backgroundColor: isActive('/assignments') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/student/assignments') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -101,10 +99,10 @@ const StudentNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/grades"
+            to="/student/grades"
             startIcon={<Grade />}
             sx={{ 
-              backgroundColor: isActive('/grades') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/student/grades') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -114,10 +112,10 @@ const StudentNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/announcements"
+            to="/student/announcements"
             startIcon={<Campaign />}
             sx={{ 
-              backgroundColor: isActive('/announcements') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/student/announcements') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -127,10 +125,10 @@ const StudentNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/attendance"
+            to="/student/attendance"
             startIcon={<EventNote />}
             sx={{ 
-              backgroundColor: isActive('/attendance') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/student/attendance') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -140,23 +138,36 @@ const StudentNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/progress"
+            to="/student/progress"
             startIcon={<TrendingUp />}
             sx={{ 
-              backgroundColor: isActive('/progress') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/student/progress') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
             Progress
           </Button>
+
+          <Button 
+            color="inherit" 
+            component={Link} 
+            to="/student/virtual-classroom"
+            startIcon={<VideoCall />}
+            sx={{ 
+              backgroundColor: isActive('/student/virtual-classroom') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Classes
+          </Button>
           
           <Button 
             color="inherit" 
             component={Link} 
-            to="/calendar"
+            to="/student/calendar"
             startIcon={<CalendarToday />}
             sx={{ 
-              backgroundColor: isActive('/calendar') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/student/calendar') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -166,10 +177,10 @@ const StudentNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/waitlist"
+            to="/student/waitlist"
             startIcon={<HourglassEmpty />}
             sx={{ 
-              backgroundColor: isActive('/waitlist') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/student/waitlist') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -208,11 +219,11 @@ const StudentNavbar = ({ user, onLogout }) => {
             open={Boolean(anchorEl)}
             onClose={handleClose}
           >
-            <MenuItem component={Link} to="/profile" onClick={handleClose}>
+            <MenuItem component={Link} to="/student/profile" onClick={handleClose}>
               <Person sx={{ mr: 1 }} />
               My Profile
             </MenuItem>
-            <MenuItem component={Link} to="/settings" onClick={handleClose}>
+            <MenuItem component={Link} to="/student/settings" onClick={handleClose}>
               <Settings sx={{ mr: 1 }} />
               Settings
             </MenuItem>

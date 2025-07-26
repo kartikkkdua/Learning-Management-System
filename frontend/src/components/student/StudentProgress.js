@@ -18,12 +18,10 @@ import {
 } from '@mui/material';
 import {
   School,
-  TrendingUp,
   Assignment,
   Grade,
   EventNote,
   CheckCircle,
-  Schedule,
   MenuBook
 } from '@mui/icons-material';
 import axios from 'axios';

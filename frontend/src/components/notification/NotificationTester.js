@@ -70,23 +70,46 @@ const NotificationTester = ({ user }) => {
       if (formData.broadcast) {
         // For demo purposes, we'll broadcast to a few test user IDs
         const testUserIds = [user.id || user._id]; // Send to self for testing
-        await broadcastNotification(testUserIds, {
-          title: formData.title,
-          message: formData.message,
-          type: formData.type,
-          priority: formData.priority,
-          category: formData.category
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/notifications/bulk`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            recipients: testUserIds,
+            title: formData.title,
+            message: formData.message,
+            type: formData.type,
+            priority: formData.priority,
+            category: formData.category
+          })
         });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         setResult({ type: 'success', message: 'Broadcast notification sent successfully!' });
       } else {
-        await createNotification({
-          recipient: formData.recipient || user.id || user._id,
-          title: formData.title,
-          message: formData.message,
-          type: formData.type,
-          priority: formData.priority,
-          category: formData.category
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/notifications`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            recipient: formData.recipient || user.id || user._id,
+            title: formData.title,
+            message: formData.message,
+            type: formData.type,
+            priority: formData.priority,
+            category: formData.category
+          })
         });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         setResult({ type: 'success', message: 'Notification sent successfully!' });
       }
 

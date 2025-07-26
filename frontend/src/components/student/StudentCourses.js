@@ -9,12 +9,10 @@ import {
   Button,
   Box,
   Chip,
-  Avatar,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
-  Divider,
   Paper,
   Tab,
   Tabs,
@@ -23,7 +21,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  LinearProgress,
   Snackbar
 } from '@mui/material';
 import {
@@ -32,9 +29,6 @@ import {
   Schedule,
   LocationOn,
   People,
-  Assignment,
-  Grade,
-  EventNote,
   Add,
   School,
   TrendingUp

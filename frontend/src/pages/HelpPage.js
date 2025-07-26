@@ -16,13 +16,8 @@ import {
   InputAdornment,
   Tab,
   Tabs,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Avatar,
   Rating,
-  Divider
 } from '@mui/material';
 import {
   Search,
@@ -38,10 +33,8 @@ import {
   School,
   Person,
   AdminPanelSettings,
-  CheckCircle,
   PlayArrow,
   Download,
-  Star
 } from '@mui/icons-material';
 
 const HelpPage = () => {

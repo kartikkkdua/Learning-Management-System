@@ -3,8 +3,6 @@ import {
   Container,
   Typography,
   Grid,
-  Card,
-  CardContent,
   Box,
   Paper,
   Avatar,
@@ -34,7 +32,6 @@ import {
 } from '@mui/icons-material';
 
 const StudentProfile = ({ user }) => {
-  const [editMode, setEditMode] = useState(false);
   const [editDialog, setEditDialog] = useState(false);
   const [profileData, setProfileData] = useState({
     firstName: user?.profile?.firstName || 'John',

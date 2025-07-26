@@ -26,7 +26,8 @@ import {
   Person,
   CalendarToday,
   Notifications,
-  Email
+  Email,
+  VideoCall
 } from '@mui/icons-material';
 import NotificationBell from '../notification/NotificationBell';
 
@@ -61,10 +62,10 @@ const FacultyNavbar = ({ user, onLogout }) => {
           <Button
             color="inherit"
             component={Link}
-            to="/"
+            to="/faculty"
             startIcon={<DashboardIcon />}
             sx={{
-              backgroundColor: isActive('/') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/faculty') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -74,10 +75,10 @@ const FacultyNavbar = ({ user, onLogout }) => {
           <Button
             color="inherit"
             component={Link}
-            to="/courses"
+            to="/faculty/courses"
             startIcon={<MenuBook />}
             sx={{
-              backgroundColor: isActive('/courses') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/faculty/courses') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -87,10 +88,10 @@ const FacultyNavbar = ({ user, onLogout }) => {
           <Button
             color="inherit"
             component={Link}
-            to="/students"
+            to="/faculty/students"
             startIcon={<People />}
             sx={{
-              backgroundColor: isActive('/students') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/faculty/students') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -100,10 +101,10 @@ const FacultyNavbar = ({ user, onLogout }) => {
           <Button
             color="inherit"
             component={Link}
-            to="/assignments"
+            to="/faculty/assignments"
             startIcon={<Assignment />}
             sx={{
-              backgroundColor: isActive('/assignments') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/faculty/assignments') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -113,10 +114,10 @@ const FacultyNavbar = ({ user, onLogout }) => {
           <Button
             color="inherit"
             component={Link}
-            to="/grading"
+            to="/faculty/grading"
             startIcon={<Grade />}
             sx={{
-              backgroundColor: isActive('/grading') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/faculty/grading') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -126,10 +127,10 @@ const FacultyNavbar = ({ user, onLogout }) => {
           <Button
             color="inherit"
             component={Link}
-            to="/attendance"
+            to="/faculty/attendance"
             startIcon={<EventNote />}
             sx={{
-              backgroundColor: isActive('/attendance') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/faculty/attendance') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -139,10 +140,23 @@ const FacultyNavbar = ({ user, onLogout }) => {
           <Button
             color="inherit"
             component={Link}
-            to="/announcements"
+            to="/faculty/virtual-classroom"
+            startIcon={<VideoCall />}
+            sx={{
+              backgroundColor: isActive('/faculty/virtual-classroom') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              borderRadius: 2
+            }}
+          >
+            Virtual Classes
+          </Button>
+
+          <Button
+            color="inherit"
+            component={Link}
+            to="/faculty/announcements"
             startIcon={<Campaign />}
             sx={{
-              backgroundColor: isActive('/announcements') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/faculty/announcements') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -152,10 +166,10 @@ const FacultyNavbar = ({ user, onLogout }) => {
           <Button
             color="inherit"
             component={Link}
-            to="/create-notification"
+            to="/faculty/notifications"
             startIcon={<Notifications />}
             sx={{
-              backgroundColor: isActive('/create-notification') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/faculty/notifications') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -165,10 +179,10 @@ const FacultyNavbar = ({ user, onLogout }) => {
           <Button
             color="inherit"
             component={Link}
-            to="/email"
+            to="/faculty/email"
             startIcon={<Email />}
             sx={{
-              backgroundColor: isActive('/email') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/faculty/email') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -182,7 +196,7 @@ const FacultyNavbar = ({ user, onLogout }) => {
           <IconButton
             color="inherit"
             component={Link}
-            to="/discussions"
+            to="/faculty/discussions"
           >
             <Badge badgeContent={2} color="error">
               <Forum />
@@ -217,11 +231,11 @@ const FacultyNavbar = ({ user, onLogout }) => {
             open={Boolean(anchorEl)}
             onClose={handleClose}
           >
-            <MenuItem component={Link} to="/calendar" onClick={handleClose}>
+            <MenuItem component={Link} to="/faculty/calendar" onClick={handleClose}>
               <CalendarToday sx={{ mr: 1 }} />
               Academic Calendar
             </MenuItem>
-            <MenuItem component={Link} to="/profile" onClick={handleClose}>
+            <MenuItem component={Link} to="/faculty/profile" onClick={handleClose}>
               <Person sx={{ mr: 1 }} />
               My Profile
             </MenuItem>

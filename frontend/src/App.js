@@ -5,9 +5,10 @@ import CssBaseline from '@mui/material/CssBaseline';
 
 // Import components
 import Login from './components/authentication/Login';
+import OAuthCallback from './components/authentication/OAuthCallback';
 import FacultyPortal from './components/faculty/FacultyPortal';
 import AdminPortal from './components/admin/AdminPortal';
-import StudentPortal from './pages/StudentPortal';
+import StudentPortal from './components/student/StudentPortal';
 
 // Import pages
 import LandingPage from './pages/LandingPage';
@@ -24,6 +25,9 @@ import PrivacyPage from './pages/PrivacyPage';
 // Import website components
 import WebsiteNavbar from './components/website/WebsiteNavbar';
 import Footer from './components/website/Footer';
+
+// Import contexts
+import { NotificationProvider } from './contexts/NotificationContext';
 
 // Create theme
 const theme = createTheme({
@@ -197,21 +201,28 @@ function App() {
               </>
             )
           } />
+          <Route path="/auth/callback" element={<OAuthCallback />} />
 
           {/* Protected Portal Routes */}
           <Route path="/admin/*" element={
             <ProtectedRoute requiredRole="admin">
-              <AdminPortal user={user} onLogout={handleLogout} />
+              <NotificationProvider user={user}>
+                <AdminPortal user={user} onLogout={handleLogout} />
+              </NotificationProvider>
             </ProtectedRoute>
           } />
           <Route path="/faculty/*" element={
             <ProtectedRoute requiredRole="faculty">
-              <FacultyPortal user={user} onLogout={handleLogout} />
+              <NotificationProvider user={user}>
+                <FacultyPortal user={user} onLogout={handleLogout} />
+              </NotificationProvider>
             </ProtectedRoute>
           } />
           <Route path="/student/*" element={
             <ProtectedRoute requiredRole="student">
-              <StudentPortal user={user} onLogout={handleLogout} />
+              <NotificationProvider user={user}>
+                <StudentPortal user={user} onLogout={handleLogout} />
+              </NotificationProvider>
             </ProtectedRoute>
           } />
 

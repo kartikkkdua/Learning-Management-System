@@ -12,14 +12,14 @@ import {
   Select,
   MenuItem,
   Link,
-  CircularProgress
 } from '@mui/material';
-import { School, Security } from '@mui/icons-material';
+import { School } from '@mui/icons-material';
 import axios from 'axios';
 import { API_URL } from '../../config/api';
 import TwoFactorAuth from './TwoFactorAuth';
 import ForgotPassword from './ForgotPassword.js';
 import ResetPassword from './ResetPassword';
+import SocialLogin from './SocialLogin';
 
 const Login = ({ onLogin }) => {
   const [formData, setFormData] = useState({
@@ -162,6 +162,13 @@ const Login = ({ onLogin }) => {
         </Box>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {registrationSuccess && <Alert severity="success" sx={{ mb: 2 }}>{registrationSuccess}</Alert>}
+
+        {/* Social Login Options */}
+        <SocialLogin 
+          onLogin={onLogin} 
+          onError={(err) => setError(err)} 
+        />
 
         {!isRegister ? (
           <form onSubmit={handleLogin}>

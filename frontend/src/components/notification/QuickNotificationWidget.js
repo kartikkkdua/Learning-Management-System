@@ -22,8 +22,6 @@ import {
   ExpandMore,
   ExpandLess,
   Notifications,
-  Group,
-  Person
 } from '@mui/icons-material';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';

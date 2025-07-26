@@ -25,7 +25,8 @@ import {
   GroupAdd,
   Analytics,
   Campaign,
-  Email
+  Email,
+  BugReport
 } from '@mui/icons-material';
 import NotificationBell from '../notification/NotificationBell';
 
@@ -60,10 +61,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/"
+            to="/admin"
             startIcon={<DashboardIcon />}
             sx={{ 
-              backgroundColor: isActive('/') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -73,10 +74,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/users"
+            to="/admin/users"
             startIcon={<People />}
             sx={{ 
-              backgroundColor: isActive('/users') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin/users') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -86,10 +87,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/courses"
+            to="/admin/courses"
             startIcon={<MenuBook />}
             sx={{ 
-              backgroundColor: isActive('/courses') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin/courses') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -99,10 +100,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/course-assignment"
+            to="/admin/course-assignment"
             startIcon={<Settings />}
             sx={{ 
-              backgroundColor: isActive('/course-assignment') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin/course-assignment') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -112,10 +113,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/enrollments"
+            to="/admin/enrollments"
             startIcon={<PersonAdd />}
             sx={{ 
-              backgroundColor: isActive('/enrollments') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin/enrollments') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -125,10 +126,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/students"
+            to="/admin/students"
             startIcon={<GroupAdd />}
             sx={{ 
-              backgroundColor: isActive('/students') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin/students') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -138,10 +139,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/faculties"
+            to="/admin/faculties"
             startIcon={<School />}
             sx={{ 
-              backgroundColor: isActive('/faculties') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin/faculties') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -151,10 +152,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/faculty-approval"
+            to="/admin/faculty-approval"
             startIcon={<PersonAdd />}
             sx={{ 
-              backgroundColor: isActive('/faculty-approval') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin/faculty-approval') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -164,10 +165,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/reports"
+            to="/admin/reports"
             startIcon={<Assessment />}
             sx={{ 
-              backgroundColor: isActive('/reports') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin/reports') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -177,10 +178,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/analytics"
+            to="/admin/analytics"
             startIcon={<Analytics />}
             sx={{ 
-              backgroundColor: isActive('/analytics') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin/analytics') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -190,10 +191,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/create-notification"
+            to="/admin/create-notification"
             startIcon={<Campaign />}
             sx={{ 
-              backgroundColor: isActive('/create-notification') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin/create-notification') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -203,10 +204,10 @@ const AdminNavbar = ({ user, onLogout }) => {
           <Button 
             color="inherit" 
             component={Link} 
-            to="/email"
+            to="/admin/email"
             startIcon={<Email />}
             sx={{ 
-              backgroundColor: isActive('/email') ? 'rgba(255,255,255,0.1)' : 'transparent',
+              backgroundColor: isActive('/admin/email') ? 'rgba(255,255,255,0.1)' : 'transparent',
               borderRadius: 2
             }}
           >
@@ -245,13 +246,17 @@ const AdminNavbar = ({ user, onLogout }) => {
             open={Boolean(anchorEl)}
             onClose={handleClose}
           >
-            <MenuItem component={Link} to="/calendar" onClick={handleClose}>
+            <MenuItem component={Link} to="/admin/calendar" onClick={handleClose}>
               <CalendarToday sx={{ mr: 1 }} />
               Academic Calendar
             </MenuItem>
-            <MenuItem component={Link} to="/settings" onClick={handleClose}>
+            <MenuItem component={Link} to="/admin/settings" onClick={handleClose}>
               <Settings sx={{ mr: 1 }} />
               System Settings
+            </MenuItem>
+            <MenuItem component={Link} to="/admin/oauth-debug" onClick={handleClose}>
+              <BugReport sx={{ mr: 1 }} />
+              OAuth Debug
             </MenuItem>
             <MenuItem onClick={handleLogout}>
               <Logout sx={{ mr: 1 }} />

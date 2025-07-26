@@ -26,8 +26,7 @@ import {
   Support,
   Security,
   Analytics,
-  CloudSync,
-  People
+  CloudSync
 } from '@mui/icons-material';
 
 const PricingPage = () => {

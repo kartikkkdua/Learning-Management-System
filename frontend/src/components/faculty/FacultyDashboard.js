@@ -26,9 +26,7 @@ import {
   EventNote,
   Campaign,
   Schedule,
-  TrendingUp,
   CheckCircle,
-  Warning,
   Forum
 } from '@mui/icons-material';
 import axios from 'axios';

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import StudentNavbar from './StudentNavbar';
@@ -16,6 +16,7 @@ import NotificationCenter from '../notification/NotificationCenter';
 import StudentWaitlist from './StudentWaitlist';
 import DiscussionForum from '../DiscussionForum';
 import StudentSettings from './StudentSettings';
+import VirtualClassroomDashboard from '../virtualClassroom/VirtualClassroomDashboard';
 
 const studentTheme = createTheme({
   palette: {
@@ -35,27 +36,26 @@ const StudentPortal = ({ user, onLogout }) => {
   return (
     <ThemeProvider theme={studentTheme}>
       <CssBaseline />
-      <Router>
-        <div className="StudentPortal">
-          <StudentNavbar user={user} onLogout={onLogout} />
-          <Routes>
-            <Route path="/" element={<StudentDashboard user={user} />} />
-            <Route path="/courses" element={<StudentCourses user={user} />} />
-            <Route path="/assignments" element={<StudentAssignments user={user} />} />
-            <Route path="/grades" element={<StudentGrades user={user} />} />
-            <Route path="/announcements" element={<StudentAnnouncements user={user} />} />
-            <Route path="/attendance" element={<StudentAttendance user={user} />} />
-            <Route path="/progress" element={<StudentProgress user={user} />} />
-            <Route path="/calendar" element={<AcademicCalendar user={user} />} />
-            <Route path="/notifications" element={<NotificationCenter user={user} />} />
-            <Route path="/waitlist" element={<StudentWaitlist user={user} />} />
-            <Route path="/discussions/:courseId" element={<DiscussionForum user={user} />} />
-            <Route path="/settings" element={<StudentSettings user={user} />} />
-            <Route path="/profile" element={<StudentProfile user={user} />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </div>
-      </Router>
+      <div className="StudentPortal">
+        <StudentNavbar user={user} onLogout={onLogout} />
+        <Routes>
+          <Route path="/" element={<StudentDashboard user={user} />} />
+          <Route path="courses" element={<StudentCourses user={user} />} />
+          <Route path="assignments" element={<StudentAssignments user={user} />} />
+          <Route path="grades" element={<StudentGrades user={user} />} />
+          <Route path="announcements" element={<StudentAnnouncements user={user} />} />
+          <Route path="attendance" element={<StudentAttendance user={user} />} />
+          <Route path="progress" element={<StudentProgress user={user} />} />
+          <Route path="calendar" element={<AcademicCalendar user={user} />} />
+          <Route path="notifications" element={<NotificationCenter user={user} />} />
+          <Route path="waitlist" element={<StudentWaitlist user={user} />} />
+          <Route path="virtual-classroom" element={<VirtualClassroomDashboard userRole="student" />} />
+          <Route path="discussions/:courseId" element={<DiscussionForum user={user} />} />
+          <Route path="settings" element={<StudentSettings user={user} />} />
+          <Route path="profile" element={<StudentProfile user={user} />} />
+          <Route path="*" element={<Navigate to="/student" />} />
+        </Routes>
+      </div>
     </ThemeProvider>
   );
 };
